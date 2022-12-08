@@ -65,10 +65,8 @@ public class Day8 extends Day {
                 * getRightTrees(matrix, x, y, true).size();
     }
 
-    @Override
-    protected void part1(String fileContents) throws Exception {
+    private int[][] readMatrixFromFile(String fileContents){
         List<String> allLines = Arrays.asList(fileContents.split(System.lineSeparator())); // when input file is multiline
-
         int[][] matrix = new int[allLines.size()][allLines.get(0).length()];
 
         String line;
@@ -78,7 +76,12 @@ public class Day8 extends Day {
                 matrix[i][j] = Integer.parseInt(String.valueOf(line.charAt(j)));
             }
         }
+        return matrix;
+    }
 
+    @Override
+    protected void part1(String fileContents) throws Exception {
+        int[][] matrix = readMatrixFromFile(fileContents);
         int visibleTrees = 0;
         for (int i = 0; i < matrix.length; i++) {
             for (int j = 0; j < matrix[i].length; j++) {
@@ -87,32 +90,18 @@ public class Day8 extends Day {
                 }
             }
         }
-
         System.out.println("Part1: " + visibleTrees);
     }
 
     @Override
     protected void part2(String fileContents) throws Exception {
-
-        List<String> allLines = Arrays.asList(fileContents.split(System.lineSeparator())); // when input file is multiline
-
-        int[][] matrix = new int[allLines.size()][allLines.get(0).length()];
-
-        String line;
-        for (int i = 0; i < allLines.size(); i++) {
-            line = allLines.get(i);
-            for (int j = 0; j < line.length(); j++) {
-                matrix[i][j] = Integer.parseInt(String.valueOf(line.charAt(j)));
-            }
-        }
-
+        int[][] matrix = readMatrixFromFile(fileContents);
         int maxScenicScore = 0;
         for (int i = 0; i < matrix.length; i++) {
             for (int j = 0; j < matrix[i].length; j++) {
                 maxScenicScore = Math.max(maxScenicScore, getScenicScore(matrix, i, j));
             }
         }
-
         System.out.println("Part2: " + maxScenicScore);
     }
 
