@@ -19,6 +19,10 @@ public class Point {
         this.z = 0;
     }
 
+    public Point(Point other){
+        this(other.x, other.y, other.z);
+    }
+
     public Point(String[] strPoint) {
         this.x = Integer.parseInt(strPoint[0]);
         this.y = Integer.parseInt(strPoint[1]);
