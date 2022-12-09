@@ -92,11 +92,7 @@ public class Day9 extends Day {
     }
 
     private int movementFunc(int a, int b){
-        if (a == b || Math.abs(a - b) == 1) {
-            return b;
-        } else {
-            return Math.min(a, b) + 1;
-        }
+        return Math.abs(a - b) > 1 ? Math.min(a, b) + 1 : b;
     }
 
     public static void main(String[] args) {
