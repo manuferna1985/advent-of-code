@@ -2,10 +2,10 @@ package es.ing.aoc.y2022;
 
 import es.ing.aoc.common.Day;
 import es.ing.aoc.common.Point;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.IntBinaryOperator;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -33,12 +33,9 @@ public class Day9 extends Day {
         }
 
         public static Direction of(String letter) {
-            for (Direction dir : Direction.values()) {
-                if (dir.letter.equalsIgnoreCase(letter)) {
-                    return dir;
-                }
-            }
-            throw new RuntimeException("Unknown direction");
+            return Arrays.stream(Direction.values())
+                    .filter(d -> d.letter.equalsIgnoreCase(letter)).findFirst()
+                    .orElseThrow(() -> new RuntimeException("Unknown direction"));
         }
     }
 
@@ -88,29 +85,17 @@ public class Day9 extends Day {
 
 
     private void recalculateKnotPositions(Point knotBegin, Point knotEnd) {
-        final IntBinaryOperator moveToCoalescent = (a, b) -> a > b ? b + 1 : b - 1;
-
         if (Math.abs(knotBegin.x - knotEnd.x) > 1 || Math.abs(knotBegin.y - knotEnd.y) > 1) {
-            // knotBegin and knotEnd are not adjacent, we have to move the knotEnd
-            if (knotBegin.x == knotEnd.x) {
-                // Same row
-                knotEnd.y = moveToCoalescent.applyAsInt(knotEnd.y, knotBegin.y);
-            } else if (knotBegin.y == knotEnd.y) {
-                // Same column
-                knotEnd.x = moveToCoalescent.applyAsInt(knotEnd.x, knotBegin.x);
-            } else {
-                // Diagonal positions
-                if (Math.abs(knotBegin.x - knotEnd.x) > 1 && Math.abs(knotBegin.y - knotEnd.y) > 1) {
-                    knotEnd.x = moveToCoalescent.applyAsInt(knotEnd.x, knotBegin.x);
-                    knotEnd.y = moveToCoalescent.applyAsInt(knotEnd.y, knotBegin.y);
-                } else if (Math.abs(knotBegin.x - knotEnd.x) > 1) {
-                    knotEnd.x = moveToCoalescent.applyAsInt(knotEnd.x, knotBegin.x);
-                    knotEnd.y = knotBegin.y;
-                } else {
-                    knotEnd.x = knotBegin.x;
-                    knotEnd.y = moveToCoalescent.applyAsInt(knotEnd.y, knotBegin.y);
-                }
-            }
+            knotEnd.x = movementFunc(knotEnd.x, knotBegin.x);
+            knotEnd.y = movementFunc(knotEnd.y, knotBegin.y);
+        }
+    }
+
+    private int movementFunc(int a, int b){
+        if (a == b || Math.abs(a - b) == 1) {
+            return b;
+        } else {
+            return Math.min(a, b) + 1;
         }
     }
 
