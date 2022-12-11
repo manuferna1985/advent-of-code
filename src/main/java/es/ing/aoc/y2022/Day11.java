@@ -19,7 +19,7 @@ public class Day11 extends Day {
     private static final BigDecimal WORRY_DIV_FACTOR = BigDecimal.valueOf(3.0);
     private static final int MONKEYS_TO_COUNT = 2;
 
-    static class ModPredicate implements Predicate<BigInteger> {
+    static final class ModPredicate implements Predicate<BigInteger> {
 
         private final BigInteger mod;
 
@@ -37,7 +37,7 @@ public class Day11 extends Day {
         }
     }
 
-    static class Monkey {
+    static final class Monkey {
         private final List<BigInteger> items;
         private final UnaryOperator<BigInteger> operation;
         private final ModPredicate test;
@@ -70,21 +70,17 @@ public class Day11 extends Day {
 
     @Override
     protected void part1(String fileContents) throws Exception {
-        final Map<Integer, Monkey> monkeys = getMonkeysDataFor(!fileContents.contains("Monkey 7"));
-        BigInteger inspectionsNumber = executeMonkeysGame(monkeys, 20, true);
-        System.out.println("Part1: " + inspectionsNumber);
+        System.out.println("Part1: " + executeMonkeysGame(getMonkeysDataFor(fileContents), 20, true));
     }
 
     @Override
     protected void part2(String fileContents) throws Exception {
-        final Map<Integer, Monkey> monkeys = getMonkeysDataFor(!fileContents.contains("Monkey 7"));
-        BigInteger inspectionsNumber = executeMonkeysGame(monkeys, 10000, false);
-        System.out.println("Part2: " + inspectionsNumber);
+        System.out.println("Part1: " + executeMonkeysGame(getMonkeysDataFor(fileContents), 10000, false));
     }
 
-    private Map<Integer, Monkey> getMonkeysDataFor(boolean small) {
+    private Map<Integer, Monkey> getMonkeysDataFor(String fileContents) {
         final Map<Integer, Monkey> monkeys = new HashMap<>();
-        if (small) {
+        if (!fileContents.contains("Monkey 7")) {
             monkeys.put(0, Monkey.of("79, 98",
                     (old) -> old.multiply(BigInteger.valueOf(19)), ModPredicate.of(23), 2, 3));
             monkeys.put(1, Monkey.of("54, 65, 75, 74",
@@ -117,6 +113,7 @@ public class Day11 extends Day {
     private BigInteger executeMonkeysGame(final Map<Integer, Monkey> monkeys, final int numberOfRounds, final boolean applyWorryFactor) {
         BigInteger item;
 
+        // Factor to apply when we don´t have a specific one to avoid numbers growing too much.
         final BigInteger factor = monkeys.values().stream()
                 .map(m -> m.test.mod)
                 .reduce(BigInteger::multiply)
@@ -143,7 +140,7 @@ public class Day11 extends Day {
                 .sorted(Comparator.reverseOrder())
                 .limit(MONKEYS_TO_COUNT)
                 .reduce(BigInteger::multiply)
-                .orElseThrow(() -> new RuntimeException("Not enough data to calculate monkeys iterations"));
+                .orElseThrow(() -> new RuntimeException("Not enough data to calculate monkeys inspections"));
     }
 
     public static void main(String[] args) {
