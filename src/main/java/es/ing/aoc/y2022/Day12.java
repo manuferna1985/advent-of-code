@@ -38,11 +38,28 @@ public class Day12 extends Day {
 
     private int processInput(String fileContents, boolean getMinFromLowerElevation) {
         List<String> allLines = Arrays.asList(fileContents.split(System.lineSeparator())); // when input file is multiline
-        Point[][] matrix = new Point[allLines.size()][allLines.get(0).length()];
-        Map<Integer, List<Node>> neighbours = new HashMap<>();
 
+        Map<Integer, List<Node>> neighbours = new HashMap<>();
         final AtomicReference<Point> start = new AtomicReference<>();
         final AtomicReference<Point> end = new AtomicReference<>();
+        Point[][] matrix = processLines(allLines, neighbours, start, end);
+        calculateNeighbours(matrix, neighbours);
+
+        if (!getMinFromLowerElevation) {
+            return getDistanceFrom(neighbours, start.get(), end.get());
+        } else {
+            return Arrays.stream(matrix).flatMap(Arrays::stream)
+                    .filter(point -> point.elevation.equals(LOWER))
+                    .map(point -> getDistanceFrom(neighbours, point, end.get()))
+                    .mapToInt(value -> value)
+                    .min()
+                    .orElseThrow(() -> new RuntimeException("No results from algorithm"));
+        }
+    }
+
+    private Point[][] processLines(List<String> allLines, Map<Integer, List<Node>> neighbours, AtomicReference<Point> start, AtomicReference<Point> end) {
+        Point[][] matrix = new Point[allLines.size()][allLines.get(0).length()];
+
         String line;
         char letter;
         int counter = 0;
@@ -67,24 +84,8 @@ public class Day12 extends Day {
                 counter++;
             }
         }
-        calculateNeighbours(matrix, neighbours);
 
-        if (!getMinFromLowerElevation) {
-            return getDistanceFrom(neighbours, start.get(), end.get());
-        } else {
-            return Arrays.stream(matrix).flatMap(Arrays::stream)
-                    .filter(point -> point.elevation.equals(LOWER))
-                    .map(point -> getDistanceFrom(neighbours, point, end.get()))
-                    .mapToInt(value -> value)
-                    .min()
-                    .orElseThrow(() -> new RuntimeException("No results from algorithm"));
-        }
-    }
-
-    private static int getDistanceFrom(Map<Integer, List<Node>> neighbours, Point start, Point end) {
-        Graph g = new Graph(neighbours.size());
-        g.algorithm(neighbours, start.id);
-        return g.getDistances()[end.id];
+        return matrix;
     }
 
     private void calculateNeighbours(Point[][] matrix, Map<Integer, List<Node>> neighbours) {
@@ -110,6 +111,12 @@ public class Day12 extends Day {
                 }
             }
         }
+    }
+
+    private int getDistanceFrom(Map<Integer, List<Node>> neighbours, Point start, Point end) {
+        Graph g = new Graph(neighbours.size());
+        g.algorithm(neighbours, start.id);
+        return g.getDistances()[end.id];
     }
 
     private boolean correctElevation(Point p1, Point p2) {
