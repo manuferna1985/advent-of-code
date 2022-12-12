@@ -5,36 +5,36 @@ import java.util.Map;
 import java.util.PriorityQueue;
 
 public class Graph {
-    private int[] dist;
-    private PriorityQueue<Node> pqueue;
+    private int[] distances;
+    private PriorityQueue<Node> priorityQueue;
     private Map<Integer, List<Node>> edges;
 
     //class constructor
     public Graph(int numberOfNodes) {
-        dist = new int[numberOfNodes];
-        pqueue = new PriorityQueue<>(numberOfNodes, new Node());
+        distances = new int[numberOfNodes];
+        priorityQueue = new PriorityQueue<>(numberOfNodes, new Node(0, 0));
     }
 
     public int[] getDistances() {
-        return dist;
+        return distances;
     }
 
     // Dijkstra's Algorithm implementation
     public void algorithm(Map<Integer, List<Node>> edges, int source) {
         this.edges = edges;
 
-        for (int i = 0; i < dist.length; i++) {
+        for (int i = 0; i < distances.length; i++) {
             if (i == source) {
-                dist[i] = 0;
+                distances[i] = 0;
             } else {
-                dist[i] = Integer.MAX_VALUE;
+                distances[i] = Integer.MAX_VALUE;
             }
-            pqueue.add(new Node(i, dist[i]));
+            priorityQueue.add(new Node(i, distances[i]));
         }
 
-        while (!pqueue.isEmpty()) {
+        while (!priorityQueue.isEmpty()) {
             // u is removed from PriorityQueue and has min distance
-            int u = pqueue.remove().id;
+            int u = priorityQueue.remove().getId();
             processNeighbours(u);
         }
     }
@@ -46,20 +46,20 @@ public class Graph {
         List<Node> neighbours = edges.get(origin);
         // process all neighbouring nodes of origin
         for (Node destination : neighbours) {
-            alt = dist[origin] + destination.cost;
+            alt = distances[origin] + destination.getCost();
 
             if (alt < 0) {
                 alt = Integer.MAX_VALUE;
             }
 
             // compare distances
-            if (alt < dist[destination.id]) {
-                dist[destination.id] = alt;
+            if (alt < distances[destination.getId()]) {
+                distances[destination.getId()] = alt;
 
                 // Add the current vertex to the PriorityQueue
-                Node newNode = new Node(destination.id, dist[destination.id]);
-                pqueue.remove(newNode);
-                pqueue.add(newNode);
+                Node newNode = new Node(destination.getId(), distances[destination.getId()]);
+                priorityQueue.remove(newNode);
+                priorityQueue.add(newNode);
             }
         }
     }

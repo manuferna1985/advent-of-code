@@ -4,24 +4,25 @@ import java.util.Comparator;
 
 // Node class
 public class Node implements Comparator<Node> {
-    public int id;
-    public int cost;
-
-    public Node() {
-    } //empty constructor
+    private final int id;
+    private final int cost;
 
     public Node(int id, int cost) {
         this.id = id;
         this.cost = cost;
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public int getCost() {
+        return cost;
+    }
+
     @Override
     public int compare(Node node1, Node node2) {
-        if (node1.cost < node2.cost)
-            return -1;
-        if (node1.cost > node2.cost)
-            return 1;
-        return 0;
+        return Integer.compare(node1.cost, node2.cost);
     }
 
     @Override
