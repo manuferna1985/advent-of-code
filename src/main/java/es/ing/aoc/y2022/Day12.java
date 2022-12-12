@@ -1,25 +1,122 @@
 package es.ing.aoc.y2022;
 
 import es.ing.aoc.common.Day;
+import es.ing.aoc.common.dijkstra.Graph;
+import es.ing.aoc.common.dijkstra.Node;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Day12 extends Day {
 
+    private static final int LOWER = 'a';
+    private static final int HIGHER = 'z';
+    private static final Byte WEIGHT = (byte) 1;
+
+    static final class Point {
+        private final Integer id;
+        private final Integer elevation;
+
+        public Point(Integer id, Integer elevation) {
+            this.id = id;
+            this.elevation = elevation;
+        }
+    }
+
     @Override
     protected void part1(String fileContents) throws Exception {
-        String[] packages = fileContents.split(System.lineSeparator()); // when input file is multiline
-
-        System.out.println("Part1: " + 1);
+        System.out.println("Part1: " + processInput(fileContents, false));
     }
 
     @Override
     protected void part2(String fileContents) throws Exception {
-        String[] packages = fileContents.split(System.lineSeparator()); // when input file is multiline
+        System.out.println("Part2: " + processInput(fileContents, true));
+    }
 
+    private int processInput(String fileContents, boolean getMinFromLowerElevation) {
+        List<String> allLines = Arrays.asList(fileContents.split(System.lineSeparator())); // when input file is multiline
+        Point[][] matrix = new Point[allLines.size()][allLines.get(0).length()];
+        Map<Integer, List<Node>> neighbours = new HashMap<>();
 
-        System.out.println("Part2: " + 2);
+        final AtomicReference<Point> start = new AtomicReference<>();
+        final AtomicReference<Point> end = new AtomicReference<>();
+        String line;
+        char letter;
+        int counter = 0;
+        for (int i = 0; i < allLines.size(); i++) {
+            line = allLines.get(i);
+            for (int j = 0; j < line.length(); j++) {
+                letter = line.charAt(j);
+                switch (letter) {
+                    case 'E':
+                        matrix[i][j] = new Point(counter, HIGHER);
+                        end.set(matrix[i][j]);
+                        break;
+                    case 'S':
+                        matrix[i][j] = new Point(counter, LOWER);
+                        start.set(matrix[i][j]);
+                        break;
+                    default:
+                        matrix[i][j] = new Point(counter, (int) letter);
+                        break;
+                }
+                neighbours.put(counter, new ArrayList<>());
+                counter++;
+            }
+        }
+        calculateNeighbours(matrix, neighbours);
+
+        if (!getMinFromLowerElevation) {
+            return getDistanceFrom(neighbours, start.get(), end.get());
+        } else {
+            return Arrays.stream(matrix).flatMap(Arrays::stream)
+                    .filter(point -> point.elevation.equals(LOWER))
+                    .map(point -> getDistanceFrom(neighbours, point, end.get()))
+                    .mapToInt(value -> value)
+                    .min()
+                    .orElseThrow(() -> new RuntimeException("No results from algorithm"));
+        }
+    }
+
+    private static int getDistanceFrom(Map<Integer, List<Node>> neighbours, Point start, Point end) {
+        Graph g = new Graph(neighbours.size());
+        g.algorithm(neighbours, start.id);
+        return g.getDistances()[end.id];
+    }
+
+    private void calculateNeighbours(Point[][] matrix, Map<Integer, List<Node>> neighbours) {
+        Point me;
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++) {
+                me = matrix[i][j];
+                if (i > 0 && correctElevation(me, matrix[i - 1][j])) {
+                    // UP: i -1, j
+                    neighbours.get(me.id).add(new Node(matrix[i - 1][j].id, WEIGHT));
+                }
+                if (i < matrix.length - 1 && correctElevation(matrix[i][j], matrix[i + 1][j])) {
+                    // DOWN: i + 1, j
+                    neighbours.get(me.id).add(new Node(matrix[i + 1][j].id, WEIGHT));
+                }
+                if (j > 0 && correctElevation(matrix[i][j], matrix[i][j - 1])) {
+                    // LEFT: i, j - 1
+                    neighbours.get(me.id).add(new Node(matrix[i][j - 1].id, WEIGHT));
+                }
+                if (j < matrix[i].length - 1 && correctElevation(matrix[i][j], matrix[i][j + 1])) {
+                    // RIGHT: i, j + 1
+                    neighbours.get(me.id).add(new Node(matrix[i][j + 1].id, WEIGHT));
+                }
+            }
+        }
+    }
+
+    private boolean correctElevation(Point p1, Point p2) {
+        return (p2.elevation == p1.elevation + 1) || (p2.elevation <= p1.elevation);
     }
 
     public static void main(String[] args) {
-        Day.run(Day12::new, "2022/D12_small.txt", "2022/D12_full.txt");
+        Day.run(Day12::new, "2022/D12_small.txt", "2022/D12_custom.txt", "2022/D12_full.txt");
     }
 }
