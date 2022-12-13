@@ -1,6 +1,6 @@
 package es.ing.aoc.y2022;
 
-import es.ing.aoc.common.Day;
+import es.ing.aoc.common.DayV2;
 import es.ing.aoc.common.dijkstra.Graph;
 import es.ing.aoc.common.dijkstra.Node;
 import java.util.ArrayList;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class Day12 extends Day {
+public class Day12 extends DayV2 {
 
     private static final int LOWER = 'a';
     private static final int HIGHER = 'z';
@@ -27,13 +27,13 @@ public class Day12 extends Day {
     }
 
     @Override
-    protected void part1(String fileContents) throws Exception {
-        System.out.println("Part1: " + processInput(fileContents, false));
+    protected String part1(String fileContents) throws Exception {
+       return String.valueOf(processInput(fileContents, false));
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
-        System.out.println("Part2: " + processInput(fileContents, true));
+    protected String part2(String fileContents) throws Exception {
+        return String.valueOf(processInput(fileContents, true));
     }
 
     private int processInput(String fileContents, boolean getMinFromLowerElevation) {
@@ -124,6 +124,6 @@ public class Day12 extends Day {
     }
 
     public static void main(String[] args) {
-        Day.run(Day12::new, "2022/D12_small.txt", "2022/D12_custom.txt", "2022/D12_full.txt");
+        DayV2.run(Day12::new, "2022/D12_small.txt", "2022/D12_custom.txt", "2022/D12_full.txt");
     }
 }
