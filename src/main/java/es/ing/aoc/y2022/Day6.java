@@ -21,16 +21,15 @@ public class Day6 extends Day {
     }
 
     @Override
-    protected void part1(String fileContents) throws Exception {
+    protected String part1(String fileContents) throws Exception {
         String message = fileContents.split(System.lineSeparator())[0]; // when input file is multiline
-        System.out.println("Part1: " + getPosition(message, 4));
+        return String.valueOf(getPosition(message, 4));
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
+    protected String part2(String fileContents) throws Exception {
         String message = fileContents.split(System.lineSeparator())[0]; // when input file is multiline
-        System.out.println("Part2: " + getPosition(message, 14));
-
+        return String.valueOf(getPosition(message, 14));
     }
 
     public static void main(String[] args) {

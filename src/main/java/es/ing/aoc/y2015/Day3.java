@@ -32,7 +32,7 @@ public class Day3 extends Day {
     }
 
     @Override
-    protected void part1(String fileContents) throws Exception {
+    protected String part1(String fileContents) throws Exception {
 
         HashMap<Point, Integer> gifts = new HashMap<>();
         AtomicReference<Point> current = new AtomicReference<>(new Point(0, 0));
@@ -49,11 +49,11 @@ public class Day3 extends Day {
             }
         });
 
-        System.out.println("Part 1: " + gifts.size());
+        return String.valueOf(gifts.size());
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
+    protected String part2(String fileContents) throws Exception {
 
         HashMap<Point, Integer> gifts = new HashMap<>();
         AtomicReference<Point> currentSanta = new AtomicReference<>(new Point(0, 0));
@@ -86,7 +86,7 @@ public class Day3 extends Day {
             side.set(!side.get());
         });
 
-        System.out.println("Part 2: " + gifts.size());
+        return String.valueOf(gifts.size());
     }
 
     private Point getPointFrom(Point origin, Direction direction){

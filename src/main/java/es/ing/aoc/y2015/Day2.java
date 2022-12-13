@@ -9,7 +9,7 @@ public class Day2 extends Day {
 
 
     @Override
-    protected void part1(String fileContents) throws Exception {
+    protected String part1(String fileContents) throws Exception {
 
         String[] packages = fileContents.split(System.lineSeparator());
 
@@ -31,11 +31,11 @@ public class Day2 extends Day {
 
         }
 
-        System.out.println("Part 1: " + totalNeededSize);
+        return String.valueOf(totalNeededSize);
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
+    protected String part2(String fileContents) throws Exception {
 
         String[] packages = fileContents.split(System.lineSeparator());
 
@@ -60,7 +60,7 @@ public class Day2 extends Day {
             totalNeededSize += ribbon + bow;
         }
 
-        System.out.println("Part 2: " + totalNeededSize);
+        return String.valueOf(totalNeededSize);
     }
 
     public static void main(String[] args) {

@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -63,49 +64,68 @@ public class Day11 extends Day {
                     operation, test, monkeyWhenTrue, monkeyWhenFalse);
         }
 
-        public void inspect(){
+        public BigInteger processItem(BigInteger customFactor) {
+            this.inspect();
+            return applyFactor(this.operation.apply(this.items.remove(0)), customFactor);
+        }
+
+        public Integer testAndNextMonkey(BigInteger item) {
+            return this.test.test(item) ? this.monkeyWhenTrue : this.monkeyWhenFalse;
+        }
+
+        public void addItemToMonkeyQueue(BigInteger newItem) {
+            this.items.add(newItem);
+        }
+
+        private void inspect() {
             this.numberOfInspections = this.numberOfInspections.add(BigInteger.ONE);
+        }
+
+        private BigInteger applyFactor(BigInteger item, BigInteger factor) {
+            return Optional.ofNullable(factor)
+                    .map(item::mod)
+                    .orElse(new BigDecimal(item).divide(WORRY_DIV_FACTOR, RoundingMode.FLOOR).toBigInteger());
         }
     }
 
     @Override
-    protected void part1(String fileContents) throws Exception {
-        System.out.println("Part1: " + executeMonkeysGame(getMonkeysDataFor(fileContents), 20, true));
+    protected String part1(String fileContents) throws Exception {
+        return String.valueOf(executeMonkeysGame(getMonkeysDataFor(fileContents), 20, true));
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
-        System.out.println("Part1: " + executeMonkeysGame(getMonkeysDataFor(fileContents), 10000, false));
+    protected String part2(String fileContents) throws Exception {
+        return String.valueOf(executeMonkeysGame(getMonkeysDataFor(fileContents), 10000, false));
     }
 
     private Map<Integer, Monkey> getMonkeysDataFor(String fileContents) {
         final Map<Integer, Monkey> monkeys = new HashMap<>();
         if (!fileContents.contains("Monkey 7")) {
             monkeys.put(0, Monkey.of("79, 98",
-                    (old) -> old.multiply(BigInteger.valueOf(19)), ModPredicate.of(23), 2, 3));
+                    old -> old.multiply(BigInteger.valueOf(19)), ModPredicate.of(23), 2, 3));
             monkeys.put(1, Monkey.of("54, 65, 75, 74",
-                    (old) -> old.add(BigInteger.valueOf(6)), ModPredicate.of(19), 2, 0));
+                    old -> old.add(BigInteger.valueOf(6)), ModPredicate.of(19), 2, 0));
             monkeys.put(2, Monkey.of("79, 60, 97",
-                    (old) -> old.multiply(old), ModPredicate.of(13), 1, 3));
+                    old -> old.multiply(old), ModPredicate.of(13), 1, 3));
             monkeys.put(3, Monkey.of("74",
-                    (old) -> old.add(BigInteger.valueOf(3)), ModPredicate.of(17), 0, 1));
+                    old -> old.add(BigInteger.valueOf(3)), ModPredicate.of(17), 0, 1));
         } else {
             monkeys.put(0, Monkey.of("57",
-                    (old) -> old.multiply(BigInteger.valueOf(13)), ModPredicate.of(11), 3, 2));
+                    old -> old.multiply(BigInteger.valueOf(13)), ModPredicate.of(11), 3, 2));
             monkeys.put(1, Monkey.of("58, 93, 88, 81, 72, 73, 65",
-                    (old) -> old.add(BigInteger.valueOf(2)), ModPredicate.of(7), 6, 7));
+                    old -> old.add(BigInteger.valueOf(2)), ModPredicate.of(7), 6, 7));
             monkeys.put(2, Monkey.of("65, 95",
-                    (old) -> old.add(BigInteger.valueOf(6)), ModPredicate.of(13), 3, 5));
+                    old -> old.add(BigInteger.valueOf(6)), ModPredicate.of(13), 3, 5));
             monkeys.put(3, Monkey.of("58, 80, 81, 83",
-                    (old) -> old.multiply(old), ModPredicate.of(5), 4, 5));
+                    old -> old.multiply(old), ModPredicate.of(5), 4, 5));
             monkeys.put(4, Monkey.of("58, 89, 90, 96, 55",
-                    (old) -> old.add(BigInteger.valueOf(3)), ModPredicate.of(3), 1, 7));
+                    old -> old.add(BigInteger.valueOf(3)), ModPredicate.of(3), 1, 7));
             monkeys.put(5, Monkey.of("66, 73, 87, 58, 62, 67",
-                    (old) -> old.multiply(BigInteger.valueOf(7)), ModPredicate.of(17), 4, 1));
+                    old -> old.multiply(BigInteger.valueOf(7)), ModPredicate.of(17), 4, 1));
             monkeys.put(6, Monkey.of("85, 55, 89",
-                    (old) -> old.add(BigInteger.valueOf(4)), ModPredicate.of(2), 2, 0));
+                    old -> old.add(BigInteger.valueOf(4)), ModPredicate.of(2), 2, 0));
             monkeys.put(7, Monkey.of("73, 80, 54, 94, 90, 52, 69, 58",
-                    (old) -> old.add(BigInteger.valueOf(7)), ModPredicate.of(19), 6, 0));
+                    old -> old.add(BigInteger.valueOf(7)), ModPredicate.of(19), 6, 0));
         }
         return monkeys;
     }
@@ -123,14 +143,9 @@ public class Day11 extends Day {
             for (int m = 0; m < monkeys.size(); m++) {
                 Monkey mk = monkeys.get(m);
                 while (!mk.items.isEmpty()) {
-                    item = mk.operation.apply(mk.items.remove(0));
-                    if (applyWorryFactor) {
-                        item = new BigDecimal(item).divide(WORRY_DIV_FACTOR, RoundingMode.FLOOR).toBigInteger();
-                    } else {
-                        item = item.mod(factor);
-                    }
-                    monkeys.get(mk.test.test(item) ? mk.monkeyWhenTrue : mk.monkeyWhenFalse).items.add(item);
-                    mk.inspect();
+                    item = mk.processItem(!applyWorryFactor ? factor : null);
+                    monkeys.get(mk.testAndNextMonkey(item)).addItemToMonkeyQueue(item);
+
                 }
             }
         }

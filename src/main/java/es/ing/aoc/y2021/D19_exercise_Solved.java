@@ -269,8 +269,7 @@ public class D19_exercise_Solved extends Day {
         return result;
     }
 
-    @Override
-    protected void part1(String fileContents) {
+    private int algorithm(String fileContents, boolean getMaxDist) {
         var scanners = orientations(parse(fileContents)).toArray(ScannerOrientation[]::new);
         var orientation = new Scanner[scanners.length];
         var position = new Point[scanners.length];
@@ -312,13 +311,21 @@ public class D19_exercise_Solved extends Day {
             }
         }
 
-        System.out.println("Part 1: " + result.beacons.size());
-        System.out.println("Part 2: " + maxDist);
+        if (getMaxDist) {
+            return maxDist;
+        } else {
+            return result.beacons.size();
+        }
     }
 
     @Override
-    protected void part2(String fileContents) {
-        // Actually we did part 2 in part 1...
+    protected String part1(String fileContents) {
+        return String.valueOf(algorithm(fileContents, false));
+    }
+
+    @Override
+    protected String part2(String fileContents) {
+        return String.valueOf(algorithm(fileContents, true));
     }
 
     public static void main(String[] args) {

@@ -40,15 +40,15 @@ public class Day9 extends Day {
     }
 
     @Override
-    protected void part1(String fileContents) throws Exception {
+    protected String part1(String fileContents) throws Exception {
         String[] movements = fileContents.split(System.lineSeparator()); // when input file is multiline
-        System.out.println("Part1: " + makeMovements(movements, 2));
+        return String.valueOf(makeMovements(movements, 2));
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
+    protected String part2(String fileContents) throws Exception {
         String[] movements = fileContents.split(System.lineSeparator()); // when input file is multiline
-        System.out.println("Part2: " + makeMovements(movements, 10));
+        return String.valueOf(makeMovements(movements, 10));
     }
 
     private int makeMovements(String[] movements, int numberOfKnots) {
@@ -91,7 +91,7 @@ public class Day9 extends Day {
         }
     }
 
-    private int movementFunc(int a, int b){
+    private int movementFunc(int a, int b) {
         return Math.abs(a - b) > 1 ? Math.min(a, b) + 1 : b;
     }
 

@@ -5,26 +5,30 @@ import java.util.Map;
 import java.util.PriorityQueue;
 
 public class Graph {
-    private int[] distances;
-    private PriorityQueue<Node> priorityQueue;
-    private Map<Integer, List<Node>> edges;
+    private final int[] distances;
+    private final PriorityQueue<Node> priorityQueue;
+    private final Map<Integer, List<Node>> edges;
 
     //class constructor
-    public Graph(int numberOfNodes) {
-        distances = new int[numberOfNodes];
-        priorityQueue = new PriorityQueue<>(numberOfNodes, new Node(0, 0));
+    public Graph(Map<Integer, List<Node>> edges) {
+        this.distances = new int[edges.size()];
+        this.priorityQueue = new PriorityQueue<>(edges.size(), new Node(0, 0));
+        this.edges = edges;
     }
 
     public int[] getDistances() {
         return distances;
     }
 
+    public void algorithm(int source) {
+        algorithm(List.of(source));
+    }
+
     // Dijkstra's Algorithm implementation
-    public void algorithm(Map<Integer, List<Node>> edges, int source) {
-        this.edges = edges;
+    public Graph algorithm(List<Integer> sources) {
 
         for (int i = 0; i < distances.length; i++) {
-            if (i == source) {
+            if (sources.contains(i)) {
                 distances[i] = 0;
             } else {
                 distances[i] = Integer.MAX_VALUE;
@@ -37,6 +41,8 @@ public class Graph {
             int u = priorityQueue.remove().getId();
             processNeighbours(u);
         }
+
+        return this;
     }
 
     // This methods processes all neighbours of the just visited node

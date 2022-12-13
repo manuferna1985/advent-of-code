@@ -18,17 +18,17 @@ public class Day5 extends Day {
     }
 
     @Override
-    protected void part1(String fileContents) throws Exception {
+    protected String part1(String fileContents) throws Exception {
         String[] packages = fileContents.split(System.lineSeparator()); // when input file is multiline
         Map<Integer, Stack<String>> containers = moveCratesAlgorithm(packages, false);
-        System.out.println("Part1: " + getTopElementsFrom(containers));
+        return getTopElementsFrom(containers);
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
+    protected String part2(String fileContents) throws Exception {
         String[] packages = fileContents.split(System.lineSeparator()); // when input file is multiline
         Map<Integer, Stack<String>> containers = moveCratesAlgorithm(packages, true);
-        System.out.println("Part2: " + getTopElementsFrom(containers));
+        return getTopElementsFrom(containers);
     }
 
     private static Map<Integer, Stack<String>> moveCratesAlgorithm(String[] packages, boolean multiCrateMovement) {
@@ -53,7 +53,7 @@ public class Day5 extends Day {
                     do {
                         String row = lines.pop();
                         for (int i = 0; i < max; i++) {
-                            String letter = safeSubstr(row,(4 * i) + 1, (4 * i) + 2);
+                            String letter = safeSubstr(row, (4 * i) + 1, (4 * i) + 2);
                             if (!letter.equals(SPACE)) {
                                 containers.get(i + 1).add(letter);
                             }
@@ -70,8 +70,8 @@ public class Day5 extends Day {
                 Integer destinationStack = Integer.parseInt(parts[5]);
 
                 Stack<String> aux = new Stack<>();
-                for (int i=0; i<numberOfCrates; i++){
-                    if (!containers.get(originStack).isEmpty()){
+                for (int i = 0; i < numberOfCrates; i++) {
+                    if (!containers.get(originStack).isEmpty()) {
                         if (!multiCrateMovement) {
                             containers.get(destinationStack).add(containers.get(originStack).pop());
                         } else {
@@ -80,7 +80,7 @@ public class Day5 extends Day {
                     }
                 }
 
-                while(!aux.isEmpty()){
+                while (!aux.isEmpty()) {
                     containers.get(destinationStack).add(aux.pop());
                 }
             }
@@ -89,10 +89,10 @@ public class Day5 extends Day {
         return containers;
     }
 
-    private static String getTopElementsFrom(Map<Integer, Stack<String>> containers){
+    private static String getTopElementsFrom(Map<Integer, Stack<String>> containers) {
         StringBuilder topCrates = new StringBuilder();
 
-        for (int i = 1; i<= containers.size(); i++){
+        for (int i = 1; i <= containers.size(); i++) {
             topCrates.append(containers.get(i).peek());
         }
         return topCrates.toString();

@@ -13,7 +13,7 @@ public class Day5 extends Day {
     private static final List<String> VOWELS = List.of("a", "e", "i", "o", "u");
 
     @Override
-    protected void part1(String fileContents) throws Exception {
+    protected String part1(String fileContents) throws Exception {
 
         AtomicInteger niceWords = new AtomicInteger();
 
@@ -23,11 +23,11 @@ public class Day5 extends Day {
             }
         });
 
-        System.out.println("Part 1: " + niceWords.get());
+        return String.valueOf(niceWords.get());
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
+    protected String part2(String fileContents) throws Exception {
 
         AtomicInteger niceWords = new AtomicInteger();
 
@@ -37,8 +37,7 @@ public class Day5 extends Day {
             }
         });
 
-        System.out.println("Part 2: " + niceWords.get());
-
+        return String.valueOf(niceWords.get());
     }
 
     private boolean rule1(String word) {

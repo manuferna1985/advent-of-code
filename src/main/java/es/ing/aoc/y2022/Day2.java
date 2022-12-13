@@ -85,12 +85,11 @@ public class Day2 extends Day {
     }
 
     @Override
-    protected void part1(String fileContents) throws Exception {
+    protected String part1(String fileContents) throws Exception {
         String[] match = fileContents.split(System.lineSeparator()); // when input file is multiline
 
         int total = 0;
         for (String line : match) {
-
             String[] plays = line.split(" ");
 
             Play first = Play.of(plays[0]);
@@ -99,17 +98,16 @@ public class Day2 extends Day {
             total += second.matchResultAgainst(first);
             total += second.getBasePoints();
         }
-        System.out.println("Part2: " + total);
+        return String.valueOf(total);
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
+    protected String part2(String fileContents) throws Exception {
 
         String[] match = fileContents.split(System.lineSeparator()); // when input file is multiline
 
         int total = 0;
         for (String line : match) {
-
             String[] plays = line.split(" ");
 
             Play first = Play.of(plays[0]);
@@ -118,7 +116,7 @@ public class Day2 extends Day {
             total += second.matchResultAgainst(first);
             total += second.getBasePoints();
         }
-        System.out.println("Part1: " + total);
+        return String.valueOf(total);
     }
 
     public static void main(String[] args) {

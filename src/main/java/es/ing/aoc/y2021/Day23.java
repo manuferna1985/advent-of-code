@@ -277,7 +277,7 @@ public class Day23 extends Day {
     }
 
     @Override
-    protected void part1(String fileContents) {
+    protected String part1(String fileContents) {
         var lines = fileContents.split(System.lineSeparator());
 
         var pos = new int[20];
@@ -317,15 +317,7 @@ public class Day23 extends Day {
                 System.out.println(state.draw());
             }
         }
-
-//        test(distance, new State(new int[]{0,0,0,2,0,0,0,0,0,0,0,0,2,1,3,4,0,3,4,1}));
-//        test(distance, new State(new int[]{0,0,0,2,0,0,0,0,0,0,0,0,2,1,0,4,3,3,4,1}));
-//        test(distance, new State(new int[]{0,0,0,2,0,4,0,0,0,0,0,0,2,1,0,0,3,3,4,1}));
-//        test(distance, new State(new int[]{0,0,0,0,0,4,0,0,0,0,0,0,2,1,0,2,3,3,4,1}));
-//        test(distance, new State(new int[]{0,0,0,0,0,4,0,0,0,0,0,0,0,1,2,2,3,3,4,1}));
-//        test(distance, new State(new int[]{0,0,0,0,0,4,0,4,0,1,0,0,0,1,2,2,3,3,0,0}));
-//        test(distance, new State(new int[]{0,0,0,0,0,0,0,0,0,1,0,0,0,1,2,2,3,3,4,4}));
-//        test(distance, new State(new int[]{0,0,0,0,0,0,0,0,0,0,0,0,1,1,2,2,3,3,4,4}));
+        return String.valueOf(res.a.get(res.b.get(res.b.size() - 1)));
     }
 
     private void test(Map<State, Long> distance, State state) {
@@ -722,7 +714,7 @@ public class Day23 extends Day {
     } // class
 
     @Override
-    protected void part2(String fileContents) {
+    protected String part2(String fileContents) {
         var lines = fileContents.split(System.lineSeparator());
 
         var pos = new int[28];
@@ -774,6 +766,8 @@ public class Day23 extends Day {
         if (COUNTALL) {
             System.out.println("Total number of states: " + ts.reachAll().size());
         }
+
+        return String.valueOf(res.a.get(res.b.get(res.b.size() - 1)));
     }
 
     public static void main(String[] args) {

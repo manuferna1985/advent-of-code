@@ -10,7 +10,7 @@ public class Day4 extends Day {
     private static final String START_SEQ_6 = "000000";
 
     @Override
-    protected void part1(String fileContents) throws Exception {
+    protected String part1(String fileContents) throws Exception {
 
         MessageDigest md = MessageDigest.getInstance("MD5");
 
@@ -25,18 +25,19 @@ public class Day4 extends Day {
 
             result = Hex.encodeHexString(digest).toUpperCase();
 
-            if (result.startsWith(START_SEQ_5)){
+            if (result.startsWith(START_SEQ_5)) {
                 found = true;
             } else {
                 number++;
             }
         }
 
-        System.out.println("Part 1: " + fileContents + " --> " + result + " ::: " + number);
+        System.out.println(fileContents + " --> " + result + " ::: " + number);
+        return String.valueOf(number);
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
+    protected String part2(String fileContents) throws Exception {
 
         MessageDigest md = MessageDigest.getInstance("MD5");
 
@@ -51,7 +52,7 @@ public class Day4 extends Day {
 
             result = Hex.encodeHexString(digest).toUpperCase();
 
-            if (result.startsWith(START_SEQ_6)){
+            if (result.startsWith(START_SEQ_6)) {
                 found = true;
             } else {
                 number++;
@@ -59,6 +60,7 @@ public class Day4 extends Day {
         }
 
         System.out.println("Part 2: " + fileContents + " --> " + result + " ::: " + number);
+        return String.valueOf(number);
     }
 
     public static void main(String[] args) {

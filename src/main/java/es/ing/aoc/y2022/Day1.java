@@ -9,7 +9,7 @@ import java.util.List;
 public class Day1 extends Day {
 
     @Override
-    protected void part1(String fileContents) throws Exception {
+    protected String part1(String fileContents) throws Exception {
 
         String[] packages = fileContents.split(System.lineSeparator()); // when input file is multiline
 
@@ -27,11 +27,11 @@ public class Day1 extends Day {
 
         max = Math.max(max, current);
 
-        System.out.println("Part1: " + max);
+        return String.valueOf(max);
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
+    protected String part2(String fileContents) throws Exception {
 
         String[] packages = fileContents.split(System.lineSeparator()); // when input file is multiline
 
@@ -54,7 +54,7 @@ public class Day1 extends Day {
 
         int total = caloriesArray[0] + caloriesArray[1] + caloriesArray[2];
 
-        System.out.println("Part2: " + total);
+        return String.valueOf(total);
     }
 
     public static void main(String[] args) {

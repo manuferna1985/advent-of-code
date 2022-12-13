@@ -135,21 +135,21 @@ public class Day7 extends Day {
     }
 
     @Override
-    protected void part1(String fileContents) throws Exception {
+    protected String part1(String fileContents) throws Exception {
         String[] lines = fileContents.split(System.lineSeparator()); // when input file is multiline
         Directory root = processLines(lines);
-        System.out.println("Part1: " + countDirectoriesWithAtMost(root, DIR_LIMIT_SIZE));
+        return String.valueOf(countDirectoriesWithAtMost(root, DIR_LIMIT_SIZE));
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
+    protected String part2(String fileContents) throws Exception {
         String[] lines = fileContents.split(System.lineSeparator()); // when input file is multiline
         Directory root = processLines(lines);
 
         Integer currentFreeSpace = TOTAL_DISK - root.getSize();
         Integer minSpaceToDelete = UPDATE_NEEDED_SPACE - currentFreeSpace;
 
-        System.out.println("Part2: " + findSmallestDirectoryWithAtLeast(root, minSpaceToDelete));
+        return String.valueOf(findSmallestDirectoryWithAtLeast(root, minSpaceToDelete));
     }
 
     public static void main(String[] args) {

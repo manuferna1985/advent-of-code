@@ -13,16 +13,16 @@ public class Day10 extends Day {
     private static final Integer CYCLE_STRENGTH_OFFSET = 20;
 
     @Override
-    protected void part1(String fileContents) throws Exception {
-        System.out.println("Part1: " + processCpuInstructions(fileContents, false));
+    protected String part1(String fileContents) throws Exception {
+        return processCpuInstructions(fileContents, false);
     }
 
     @Override
-    protected void part2(String fileContents) throws Exception {
-        System.out.println("Part2: " + processCpuInstructions(fileContents, true));
+    protected String part2(String fileContents) throws Exception {
+        return processCpuInstructions(fileContents, true);
     }
 
-    private int processCpuInstructions(String fileContents, boolean screenEnabled) {
+    private String processCpuInstructions(String fileContents, boolean screenEnabled) {
         final Queue<String> instructions = new LinkedList<>(
                 Arrays.asList(fileContents.split(System.lineSeparator())));
 
@@ -32,6 +32,7 @@ public class Day10 extends Day {
         int x = 1;
         int valueToAddAtEnd = 0;
         int cyclesBusy = 0;
+        StringBuilder builder = new StringBuilder("\n");
 
         String line;
         while (!instructions.isEmpty()) {
@@ -50,9 +51,9 @@ public class Day10 extends Day {
             }
 
             if (xInCrtWindowToPrint(x, crtDrawPosition)) {
-                printCrtPixel("#", screenEnabled);
+                builder.append("#");
             } else {
-                printCrtPixel(".", screenEnabled);
+                builder.append(".");
             }
 
             if ((cycle - CYCLE_STRENGTH_OFFSET) % CYCLE_STRENGTH_SIZE == 0) {
@@ -65,16 +66,14 @@ public class Day10 extends Day {
 
             if (crtDrawPosition == SCREEN_WIDTH) {
                 crtDrawPosition = 0;
-                printCrtPixel("\n", screenEnabled);
+                builder.append("\n");
             }
         }
 
-        return signalStrength;
-    }
-
-    private void printCrtPixel(String pixel, boolean screenEnabled) {
         if (screenEnabled) {
-            System.out.print(pixel);
+            return builder.toString();
+        } else {
+            return String.valueOf(signalStrength);
         }
     }
 

@@ -1,6 +1,6 @@
 package es.ing.aoc.y2022;
 
-import es.ing.aoc.common.DayV2;
+import es.ing.aoc.common.Day;
 import es.ing.aoc.common.dijkstra.Graph;
 import es.ing.aoc.common.dijkstra.Node;
 import java.util.ArrayList;
@@ -9,8 +9,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
-public class Day12 extends DayV2 {
+public class Day12 extends Day {
 
     private static final int LOWER = 'a';
     private static final int HIGHER = 'z';
@@ -24,11 +25,19 @@ public class Day12 extends DayV2 {
             this.id = id;
             this.elevation = elevation;
         }
+
+        public Integer getId() {
+            return id;
+        }
+
+        public Integer getElevation() {
+            return elevation;
+        }
     }
 
     @Override
     protected String part1(String fileContents) throws Exception {
-       return String.valueOf(processInput(fileContents, false));
+        return String.valueOf(processInput(fileContents, false));
     }
 
     @Override
@@ -48,12 +57,12 @@ public class Day12 extends DayV2 {
         if (!getMinFromLowerElevation) {
             return getDistanceFrom(neighbours, start.get(), end.get());
         } else {
-            return Arrays.stream(matrix).flatMap(Arrays::stream)
-                    .filter(point -> point.elevation.equals(LOWER))
-                    .map(point -> getDistanceFrom(neighbours, point, end.get()))
-                    .mapToInt(value -> value)
-                    .min()
-                    .orElseThrow(() -> new RuntimeException("No results from algorithm"));
+            return getDistanceFrom(
+                    neighbours,
+                    Arrays.stream(matrix).flatMap(Arrays::stream)
+                            .filter(point -> point.elevation.equals(LOWER))
+                            .collect(Collectors.toList()),
+                    end.get());
         }
     }
 
@@ -114,9 +123,13 @@ public class Day12 extends DayV2 {
     }
 
     private int getDistanceFrom(Map<Integer, List<Node>> neighbours, Point start, Point end) {
-        Graph g = new Graph(neighbours.size());
-        g.algorithm(neighbours, start.id);
-        return g.getDistances()[end.id];
+        return getDistanceFrom(neighbours, List.of(start), end);
+    }
+
+    private int getDistanceFrom(Map<Integer, List<Node>> neighbours, List<Point> startList, Point end) {
+        return new Graph(neighbours)
+                .algorithm(startList.stream().map(Point::getId).collect(Collectors.toList()))
+                .getDistances()[end.id];
     }
 
     private boolean correctElevation(Point p1, Point p2) {
@@ -124,6 +137,6 @@ public class Day12 extends DayV2 {
     }
 
     public static void main(String[] args) {
-        DayV2.run(Day12::new, "2022/D12_small.txt", "2022/D12_custom.txt", "2022/D12_full.txt");
+        Day.run(Day12::new, "2022/D12_small.txt", "2022/D12_custom.txt", "2022/D12_full.txt");
     }
 }

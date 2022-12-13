@@ -1,13 +1,13 @@
 package es.ing.aoc.y2022;
 
-import es.ing.aoc.common.DayV2;
+import es.ing.aoc.common.Day;
 import es.ing.aoc.common.TreeNode;
 import es.ing.aoc.common.TreeNodeBuilder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Day13 extends DayV2 {
+public class Day13 extends Day {
 
     @Override
     protected String part1(String fileContents) throws Exception {
@@ -48,6 +48,6 @@ public class Day13 extends DayV2 {
     }
 
     public static void main(String[] args) {
-        DayV2.run(Day13::new, "2022/D13_small.txt", "2022/D13_full.txt");
+        Day.run(Day13::new, "2022/D13_small.txt", "2022/D13_full.txt");
     }
 }
