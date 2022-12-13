@@ -24,4 +24,19 @@ public class Node implements Comparator<Node> {
     public int compare(Node node1, Node node2) {
         return Integer.compare(node1.cost, node2.cost);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Node node1 = (Node) o;
+
+        return id == node1.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
 }

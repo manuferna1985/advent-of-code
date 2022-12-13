@@ -12,20 +12,18 @@ public class TreeNodeBuilder {
     }
 
     public static TreeNode createDivider(String line) {
-        TreeNode div = createTree(line);
-        div.isDivider = true;
-        return div;
+        return createTree(line).withDivider(true);
     }
 
     public static TreeNode createTree(String line) {
         TreeNode n = new TreeNode();
         if (line.charAt(0) == '[') {
-            n.elements = splitBySameLevelCommas(line).stream()
+            n.withElements(splitBySameLevelCommas(line).stream()
                     .map(TreeNodeBuilder::createTree)
-                    .peek(child -> child.parent = n)
-                    .collect(Collectors.toList());
+                    .peek(child -> child.withParent(n))
+                    .collect(Collectors.toList()));
         } else {
-            n.value = Integer.parseInt(line);
+            n.withValue(Integer.parseInt(line));
         }
         return n;
     }

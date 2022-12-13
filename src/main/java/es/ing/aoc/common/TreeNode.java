@@ -2,39 +2,56 @@ package es.ing.aoc.common;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public final class TreeNode implements Comparable<TreeNode> {
 
-    public Integer value;
-    public TreeNode parent;
-    public List<TreeNode> elements = new ArrayList<>();
-    public boolean isDivider = false;
+    private Integer value;
+    private TreeNode parent;
+    private List<TreeNode> elements = new ArrayList<>();
+    private boolean isDivider = false;
 
     public boolean isLeafNode() {
         return value != null;
     }
 
+    public Integer getValue() {
+        return value;
+    }
+
+    public TreeNode withValue(Integer value) {
+        this.value = value;
+        return this;
+    }
+
+    public TreeNode getParent() {
+        return parent;
+    }
+
+    public TreeNode withParent(TreeNode parent) {
+        this.parent = parent;
+        return this;
+    }
+
+    public List<TreeNode> getElements() {
+        return elements;
+    }
+
+    public TreeNode withElements(List<TreeNode> elements) {
+        this.elements = elements;
+        return this;
+    }
+
+    public boolean isDivider() {
+        return isDivider;
+    }
+
+    public TreeNode withDivider(boolean divider) {
+        isDivider = divider;
+        return this;
+    }
+
     public String toString() {
         return value != null ? String.valueOf(value) : elements.toString();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        TreeNode node = (TreeNode) o;
-
-        if (!Objects.equals(value, node.value)) return false;
-        return Objects.equals(elements, node.elements);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = value != null ? value.hashCode() : 0;
-        result = 31 * result + (elements != null ? elements.hashCode() : 0);
-        return result;
     }
 
     @Override
