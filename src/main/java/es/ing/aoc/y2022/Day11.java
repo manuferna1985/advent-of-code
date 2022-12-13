@@ -64,8 +64,8 @@ public class Day11 extends Day {
                     operation, test, monkeyWhenTrue, monkeyWhenFalse);
         }
 
-        public BigInteger processItem(BigInteger customFactor) {
-            this.inspect();
+        public BigInteger inspectNextItem(BigInteger customFactor) {
+            this.numberOfInspections = this.numberOfInspections.add(BigInteger.ONE);
             return applyFactor(this.operation.apply(this.items.remove(0)), customFactor);
         }
 
@@ -75,10 +75,6 @@ public class Day11 extends Day {
 
         public void addItemToMonkeyQueue(BigInteger newItem) {
             this.items.add(newItem);
-        }
-
-        private void inspect() {
-            this.numberOfInspections = this.numberOfInspections.add(BigInteger.ONE);
         }
 
         private BigInteger applyFactor(BigInteger item, BigInteger factor) {
@@ -143,13 +139,13 @@ public class Day11 extends Day {
             for (int m = 0; m < monkeys.size(); m++) {
                 Monkey mk = monkeys.get(m);
                 while (!mk.items.isEmpty()) {
-                    item = mk.processItem(!applyWorryFactor ? factor : null);
+                    item = mk.inspectNextItem(!applyWorryFactor ? factor : null);
                     monkeys.get(mk.testAndNextMonkey(item)).addItemToMonkeyQueue(item);
-
                 }
             }
         }
 
+        // Return the multiplication of the inspections for the 2 monkeys with more inspections
         return monkeys.values().stream()
                 .map(m -> m.numberOfInspections)
                 .sorted(Comparator.reverseOrder())
