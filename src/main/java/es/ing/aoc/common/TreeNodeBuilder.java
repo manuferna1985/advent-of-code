@@ -11,10 +11,6 @@ public class TreeNodeBuilder {
         throw new RuntimeException("Constructor not meant to be called");
     }
 
-    public static TreeNode createDivider(String line) {
-        return createTree(line).withDivider(true);
-    }
-
     public static TreeNode createTree(String line) {
         TreeNode n = new TreeNode();
         if (line.charAt(0) == '[') {

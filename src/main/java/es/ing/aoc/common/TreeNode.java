@@ -8,7 +8,6 @@ public final class TreeNode implements Comparable<TreeNode> {
     private Integer value;
     private TreeNode parent;
     private List<TreeNode> elements = new ArrayList<>();
-    private boolean isDivider = false;
 
     public boolean isLeafNode() {
         return value != null;
@@ -38,15 +37,6 @@ public final class TreeNode implements Comparable<TreeNode> {
 
     public TreeNode withElements(List<TreeNode> elements) {
         this.elements = elements;
-        return this;
-    }
-
-    public boolean isDivider() {
-        return isDivider;
-    }
-
-    public TreeNode withDivider(boolean divider) {
-        isDivider = divider;
         return this;
     }
 

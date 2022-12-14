@@ -37,9 +37,9 @@ public class Day13 extends Day {
             packets.add(TreeNodeBuilder.createTree(lines[i + 1]));
         }
 
-        TreeNode div1 = TreeNodeBuilder.createDivider("[[2]]");
+        TreeNode div1 = TreeNodeBuilder.createTree("[[2]]");
         packets.add(div1);
-        TreeNode div2 = TreeNodeBuilder.createDivider("[[6]]");
+        TreeNode div2 = TreeNodeBuilder.createTree("[[6]]");
         packets.add(div2);
 
         Collections.sort(packets);
