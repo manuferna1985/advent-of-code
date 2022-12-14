@@ -1,19 +1,24 @@
 package es.ing.aoc.y2022;
 
 import es.ing.aoc.common.Day;
+import es.ing.aoc.common.Pair;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Day11 extends Day {
 
@@ -39,29 +44,26 @@ public class Day11 extends Day {
     }
 
     static final class Monkey {
-        private final List<BigInteger> items;
-        private final UnaryOperator<BigInteger> operation;
-        private final ModPredicate test;
-        private final Integer monkeyWhenTrue;
-        private final Integer monkeyWhenFalse;
+        private Integer id;
+        private List<BigInteger> items;
+        private UnaryOperator<BigInteger> operation;
+        private ModPredicate test;
+        private Integer monkeyWhenTrue;
+        private Integer monkeyWhenFalse;
         private BigInteger numberOfInspections;
 
-        private Monkey(List<BigInteger> items, UnaryOperator<BigInteger> operation, ModPredicate test, Integer monkeyWhenTrue, Integer monkeyWhenFalse) {
-            this.items = new ArrayList<>(items);
-            this.operation = operation;
-            this.test = test;
-            this.monkeyWhenTrue = monkeyWhenTrue;
-            this.monkeyWhenFalse = monkeyWhenFalse;
+        public Monkey() {
             this.numberOfInspections = BigInteger.ZERO;
         }
 
-        public static Monkey of(String items, UnaryOperator<BigInteger> operation, ModPredicate test, Integer monkeyWhenTrue, Integer monkeyWhenFalse) {
-            return new Monkey(
-                    Arrays.stream(items.split(","))
-                            .map(String::trim)
-                            .map(BigInteger::new)
-                            .collect(Collectors.toList()),
-                    operation, test, monkeyWhenTrue, monkeyWhenFalse);
+        public static Monkey of(Integer id, String items, UnaryOperator<BigInteger> operation, ModPredicate test, Integer monkeyWhenTrue, Integer monkeyWhenFalse) {
+            return new Monkey()
+                    .withId(id)
+                    .withItems(items)
+                    .withOperation(operation)
+                    .withTest(test)
+                    .withMonkeyWhenTrue(monkeyWhenTrue)
+                    .withMonkeyWhenFalse(monkeyWhenFalse);
         }
 
         public BigInteger inspectNextItem(BigInteger customFactor) {
@@ -82,6 +84,48 @@ public class Day11 extends Day {
                     .map(item::mod)
                     .orElse(new BigDecimal(item).divide(WORRY_DIV_FACTOR, RoundingMode.FLOOR).toBigInteger());
         }
+
+        public Monkey withId(Integer id) {
+            this.id = id;
+            return this;
+        }
+
+        public Monkey withItems(String items) {
+            this.items = Arrays.stream(items.split(","))
+                    .map(String::trim)
+                    .map(BigInteger::new)
+                    .collect(Collectors.toList());
+            return this;
+        }
+
+        public Monkey withOperation(UnaryOperator<BigInteger> operation) {
+            this.operation = operation;
+            return this;
+        }
+
+        public Monkey withTest(ModPredicate test) {
+            this.test = test;
+            return this;
+        }
+
+        public Monkey withMonkeyWhenTrue(Integer monkeyWhenTrue) {
+            this.monkeyWhenTrue = monkeyWhenTrue;
+            return this;
+        }
+
+        public Monkey withMonkeyWhenFalse(Integer monkeyWhenFalse) {
+            this.monkeyWhenFalse = monkeyWhenFalse;
+            return this;
+        }
+
+        public Monkey withNumberOfInspections(BigInteger numberOfInspections) {
+            this.numberOfInspections = numberOfInspections;
+            return this;
+        }
+
+        public boolean isComplete() {
+            return Stream.of(id, items, operation, test, monkeyWhenTrue, monkeyWhenFalse).allMatch(Objects::nonNull);
+        }
     }
 
     @Override
@@ -96,34 +140,60 @@ public class Day11 extends Day {
 
     private Map<Integer, Monkey> getMonkeysDataFor(String fileContents) {
         final Map<Integer, Monkey> monkeys = new HashMap<>();
-        if (!fileContents.contains("Monkey 7")) {
-            monkeys.put(0, Monkey.of("79, 98",
-                    old -> old.multiply(BigInteger.valueOf(19)), ModPredicate.of(23), 2, 3));
-            monkeys.put(1, Monkey.of("54, 65, 75, 74",
-                    old -> old.add(BigInteger.valueOf(6)), ModPredicate.of(19), 2, 0));
-            monkeys.put(2, Monkey.of("79, 60, 97",
-                    old -> old.multiply(old), ModPredicate.of(13), 1, 3));
-            monkeys.put(3, Monkey.of("74",
-                    old -> old.add(BigInteger.valueOf(3)), ModPredicate.of(17), 0, 1));
-        } else {
-            monkeys.put(0, Monkey.of("57",
-                    old -> old.multiply(BigInteger.valueOf(13)), ModPredicate.of(11), 3, 2));
-            monkeys.put(1, Monkey.of("58, 93, 88, 81, 72, 73, 65",
-                    old -> old.add(BigInteger.valueOf(2)), ModPredicate.of(7), 6, 7));
-            monkeys.put(2, Monkey.of("65, 95",
-                    old -> old.add(BigInteger.valueOf(6)), ModPredicate.of(13), 3, 5));
-            monkeys.put(3, Monkey.of("58, 80, 81, 83",
-                    old -> old.multiply(old), ModPredicate.of(5), 4, 5));
-            monkeys.put(4, Monkey.of("58, 89, 90, 96, 55",
-                    old -> old.add(BigInteger.valueOf(3)), ModPredicate.of(3), 1, 7));
-            monkeys.put(5, Monkey.of("66, 73, 87, 58, 62, 67",
-                    old -> old.multiply(BigInteger.valueOf(7)), ModPredicate.of(17), 4, 1));
-            monkeys.put(6, Monkey.of("85, 55, 89",
-                    old -> old.add(BigInteger.valueOf(4)), ModPredicate.of(2), 2, 0));
-            monkeys.put(7, Monkey.of("73, 80, 54, 94, 90, 52, 69, 58",
-                    old -> old.add(BigInteger.valueOf(7)), ModPredicate.of(19), 6, 0));
+
+        List<Pair<Pattern, BiConsumer<Monkey, Matcher>>> expectedPatterns = Stream.of(
+                        new Pair<String, BiConsumer<Monkey, Matcher>>("^Monkey ([0-9]+).+$",
+                                (monkey, matcher) -> monkey.withId(Integer.parseInt(matcher.group((1))))),
+                        new Pair<String, BiConsumer<Monkey, Matcher>>("Starting items: ([0-9, ]+)$",
+                                (monkey, matcher) -> monkey.withItems(matcher.group(1))),
+                        new Pair<String, BiConsumer<Monkey, Matcher>>("Operation: new = old ([+*]{1}) (.+)$",
+                                (monkey, matcher) -> monkey.withOperation(parseOperation(matcher))),
+                        new Pair<String, BiConsumer<Monkey, Matcher>>("Test: divisible by ([0-9]+)$",
+                                (monkey, matcher) -> monkey.withTest(ModPredicate.of(Integer.parseInt(matcher.group((1)))))),
+                        new Pair<String, BiConsumer<Monkey, Matcher>>("If true: throw to monkey ([0-9]+)$",
+                                (monkey, matcher) -> monkey.withMonkeyWhenTrue(Integer.parseInt(matcher.group((1))))),
+                        new Pair<String, BiConsumer<Monkey, Matcher>>("If false: throw to monkey ([0-9]+)$",
+                                (monkey, matcher) -> monkey.withMonkeyWhenFalse(Integer.parseInt(matcher.group((1))))))
+                .map(pair -> new Pair<>(Pattern.compile(pair.a), pair.b))
+                .collect(Collectors.toList());
+
+        Monkey monkey = new Monkey();
+        for (String line : fileContents.split(System.lineSeparator())) {
+            for (Pair<Pattern, BiConsumer<Monkey, Matcher>> patternAndConsumer : expectedPatterns) {
+                Matcher matcher = patternAndConsumer.a.matcher(line);
+                if (matcher.find()) {
+                    patternAndConsumer.b.accept(monkey, matcher);
+                    if (monkey.isComplete()) {
+                        monkeys.put(monkey.id, monkey);
+                        monkey = new Monkey();
+                    }
+                    break;
+                }
+            }
         }
+
         return monkeys;
+    }
+
+    private UnaryOperator<BigInteger> parseOperation(final Matcher matcher) {
+        UnaryOperator<BigInteger> operation;
+
+        if ("+".equals(matcher.group(1))) {
+            if ("old".equals(matcher.group(2))) {
+                operation = old -> old.add(old);
+            } else {
+                operation = old -> old.add(new BigInteger(matcher.group(2)));
+            }
+        } else if ("*".equals(matcher.group(1))) {
+            if ("old".equals(matcher.group(2))) {
+                operation = old -> old.multiply(old);
+            } else {
+                operation = old -> old.multiply(new BigInteger(matcher.group(2)));
+            }
+        } else {
+            throw new RuntimeException("Operation not implemented!");
+        }
+        return operation;
     }
 
     private BigInteger executeMonkeysGame(final Map<Integer, Monkey> monkeys, final int numberOfRounds, final boolean applyWorryFactor) {
