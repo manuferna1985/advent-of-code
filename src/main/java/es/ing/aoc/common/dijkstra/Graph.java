@@ -20,8 +20,8 @@ public class Graph {
         return distances;
     }
 
-    public void algorithm(int source) {
-        algorithm(List.of(source));
+    public Graph algorithm(int source) {
+        return algorithm(List.of(source));
     }
 
     // Dijkstra's Algorithm implementation

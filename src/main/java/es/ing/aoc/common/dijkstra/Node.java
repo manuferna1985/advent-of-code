@@ -12,6 +12,10 @@ public class Node implements Comparator<Node> {
         this.cost = cost;
     }
 
+    public Node(int id){
+        this(id, 1);
+    }
+
     public int getId() {
         return id;
     }
