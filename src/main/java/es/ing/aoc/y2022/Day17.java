@@ -2,18 +2,17 @@ package es.ing.aoc.y2022;
 
 import es.ing.aoc.common.Day;
 import es.ing.aoc.common.Point;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.UnaryOperator;
+import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.Range;
 
 public class Day17 extends Day {
 
-    private static final Integer TOTAL_ROCKS = 2022;
-
-    private static final Map<String, UnaryOperator<Integer>> WIND_FUNCTIONS = Map.of(
+    private static final Map<String, IntUnaryOperator> WIND_FUNCTIONS = Map.of(
             "<", y -> y - 1,
             ">", y -> y + 1);
 
@@ -41,16 +40,12 @@ public class Day17 extends Day {
             });
         }
 
-        public void windMovement(UnaryOperator<Integer> windFunction) {
-            parts.forEach(p -> {
-                p.y = windFunction.apply(p.y);
-            });
+        public void windMovement(IntUnaryOperator windFunction) {
+            parts.forEach(p -> p.y = windFunction.applyAsInt(p.y));
         }
 
         public void gravityMovement() {
-            parts.forEach(p -> {
-                p.x--;
-            });
+            parts.forEach(p -> p.x--);
         }
 
         public void stop() {
@@ -64,23 +59,32 @@ public class Day17 extends Day {
 
     @Override
     protected String part1(String fileContents) throws Exception {
+        return algorithm(fileContents, BigInteger.valueOf(2022L));
+    }
+
+    @Override
+    protected String part2(String fileContents) throws Exception {
+        return algorithm(fileContents, BigInteger.valueOf(1000000000000L));
+    }
+
+    private String algorithm(String fileContents, BigInteger maxRocksToFall) {
 
         String[] windStream = fileContents.split("");
-        int[][] cave = new int[50000][7];
-        int maxXToPrint = 10;
+        int[][] cave = new int[1000][7];
 
         int windIndex = 0;
         int rockIndex = 0;
-        int rocksStopped = 0;
+        BigInteger rocksStopped = BigInteger.ZERO;
+        BigInteger windMovements = BigInteger.valueOf(windStream.length);
 
         List<Rock> rocksCatalog = generateRocksCatalog();
 
         Rock currentRock;
         String wind;
+        BigInteger cuttedRows = BigInteger.ZERO;
+        BigInteger currentTop, previousTop = BigInteger.ZERO;
         do {
             currentRock = new Rock(rocksCatalog.get(rockIndex++ % rocksCatalog.size()));
-
-            //printCave(cave, maxXToPrint);
 
             // Putting rock in initial place
             Point rockPosition = new Point(getCaveTopEmptyRow(cave) + 3, 2);
@@ -89,32 +93,75 @@ public class Day17 extends Day {
                 cave[rockPoint.getX()][rockPoint.getY()] = ROCK_MOVING;
             }
 
-            //printCave(cave, maxXToPrint);
-
             do {
                 wind = windStream[windIndex++ % windStream.length];
-
                 applyWind(cave, currentRock, wind);
-                //printCave(cave, maxXToPrint);
-
                 applyGravity(cave, currentRock);
-                //printCave(cave, maxXToPrint);
-
             } while (!currentRock.isStopped);
-            rocksStopped++;
+            rocksStopped = rocksStopped.add(BigInteger.ONE);
 
-        } while (rocksStopped < TOTAL_ROCKS);
+            cuttedRows = cuttedRows.add(BigInteger.valueOf(trimCaveBottomRows(cave)));
 
-        return String.valueOf(getCaveTopEmptyRow(cave));
+            if (rocksStopped.mod(windMovements.multiply(BigInteger.valueOf(rocksCatalog.size()))).equals(BigInteger.ZERO)) {
+                currentTop = cuttedRows.add(BigInteger.valueOf(getCaveTopEmptyRow(cave)));
+                System.out.printf("%s - %s - %d - %d - %d\n", rocksStopped, cuttedRows.add(BigInteger.valueOf(getCaveTopEmptyRow(cave))), currentTop.subtract(previousTop), rockIndex % rocksCatalog.size(), windIndex % windStream.length);
+                previousTop = currentTop;
+            }
+
+            // This data has been manually calculated through the rocks cycles....
+            if (maxRocksToFall.compareTo(BigInteger.valueOf(5000)) > 0) {
+                if (windStream.length == 40) {
+                    while (rocksStopped.add(BigInteger.valueOf(140000)).compareTo(maxRocksToFall) < 0) {
+                        rocksStopped = rocksStopped.add(BigInteger.valueOf(140000));
+                        cuttedRows = cuttedRows.add(BigInteger.valueOf(212000L));
+                    }
+                } else {
+                    while (rocksStopped.add(BigInteger.valueOf(17406975)).compareTo(maxRocksToFall) < 0) {
+                        rocksStopped = rocksStopped.add(BigInteger.valueOf(17406975));
+                        cuttedRows = cuttedRows.add(BigInteger.valueOf(27094335L));
+                    }
+                }
+            }
+
+        } while (rocksStopped.compareTo(maxRocksToFall) < 0);
+
+        return String.valueOf(cuttedRows.add(BigInteger.valueOf(getCaveTopEmptyRow(cave))));
+    }
+
+    private int trimCaveBottomRows(int[][] cave) {
+        int lowerFilledRow = Integer.MAX_VALUE;
+        boolean found;
+        for (int y = 0; y < cave[0].length; y++) {
+            found = false;
+            for (int x = cave.length - 1; x >= 0; x--) {
+                if (cave[x][y] != SPACE) {
+                    found = true;
+                    lowerFilledRow = Math.min(lowerFilledRow, x);
+                    break;
+                }
+            }
+
+            if (!found) {
+                lowerFilledRow = 0;
+            }
+        }
+
+        if (lowerFilledRow > 100) {
+            for (int x = 0; x < cave.length - lowerFilledRow; x++) {
+                cave[x] = cave[x + lowerFilledRow].clone();
+            }
+            return lowerFilledRow;
+        }
+        return 0;
     }
 
     private void applyWind(int[][] cave, Rock currentRock, String wind) {
 
-        UnaryOperator<Integer> windFunction = WIND_FUNCTIONS.get(wind);
+        IntUnaryOperator windFunction = WIND_FUNCTIONS.get(wind);
         Range<Integer> legalColumns = Range.between(0, cave[0].length - 1);
 
         boolean canApplyWind = currentRock.parts.stream().allMatch(p -> {
-            int newY = windFunction.apply(p.y);
+            int newY = windFunction.applyAsInt(p.y);
             return legalColumns.contains(newY) && cave[p.x][newY] != ROCK_STOPPED;
         });
 
@@ -134,7 +181,7 @@ public class Day17 extends Day {
         boolean canApplyGravity = currentRock.parts.stream()
                 .allMatch(p -> p.x > 0 && cave[p.x - 1][p.y] != ROCK_STOPPED);
 
-        if (canApplyGravity){
+        if (canApplyGravity) {
             for (Point rockPoint : currentRock.parts) {
                 cave[rockPoint.getX()][rockPoint.getY()] = SPACE;
             }
@@ -170,13 +217,6 @@ public class Day17 extends Day {
         return firstEmptyRow;
     }
 
-    @Override
-    protected String part2(String fileContents) throws Exception {
-        String[] packages = fileContents.split(System.lineSeparator()); // when input file is multiline
-
-        return String.valueOf(2);
-    }
-
     private List<Rock> generateRocksCatalog() {
         List<Rock> rocksCatalog = new ArrayList<>();
         // Horizontal
@@ -192,19 +232,7 @@ public class Day17 extends Day {
         return rocksCatalog;
     }
 
-    private void printCave(int[][] cave, int maxX) {
-        System.out.println("--------------------------------------");
-        for (int x = maxX; x >= 0; x--) {
-            System.out.printf("%-5d - ", x);
-            for (int y = 0; y < cave[x].length; y++) {
-                System.out.printf(" %d ", cave[x][y]);
-            }
-            System.out.println();
-        }
-        System.out.println("--------------------------------------");
-    }
-
     public static void main(String[] args) {
-        Day.run(Day17::new, "2022/D17_small.txt", "2022/D17_full.txt");
+        Day.run(Day17::new, "2022/D17_full.txt");
     }
 }

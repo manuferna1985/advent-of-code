@@ -78,14 +78,13 @@ public class Day16 extends Day {
         if (!elephantHelp) {
             maxPressure = getMaxPressureFor(matrix, pressures, tunnels, MAX_TIME_PART1);
         } else {
-            for (int i = 1; i <= tunnels.size() / 2; i++) {
-                for (Pair<List<String>, List<String>> comb : generateCombinationsInPairs(tunnels, i)) {
-                    int total = Stream.of(comb.a, comb.b)
-                            .map(c -> getMaxPressureFor(matrix, pressures, c, MAX_TIME_PART2))
-                            .mapToInt(Integer::intValue).sum();
+            int k = tunnels.size() / 2;
+            for (Pair<List<String>, List<String>> comb : generateCombinationsInPairs(tunnels, k)) {
+                int total = Stream.of(comb.a, comb.b)
+                        .map(c -> getMaxPressureFor(matrix, pressures, c, MAX_TIME_PART2))
+                        .mapToInt(Integer::intValue).sum();
 
-                    maxPressure = Math.max(maxPressure, total);
-                }
+                maxPressure = Math.max(maxPressure, total);
             }
         }
 
