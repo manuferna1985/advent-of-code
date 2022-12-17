@@ -31,6 +31,14 @@ public class Point {
         }
     }
 
+    public static Point of(int x, int y, int z){
+        return new Point(x, y, z);
+    }
+
+    public static Point of(int x, int y){
+        return new Point(x, y);
+    }
+
     public String toString() {
         return String.format("[%d,%d,%d]", x, y, z);
     }
