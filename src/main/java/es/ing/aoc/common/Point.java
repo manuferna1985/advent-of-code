@@ -13,13 +13,19 @@ public class Point {
         this.z = z;
     }
 
-    public Point(int x, int y) {
-        this.x = x;
-        this.y = y;
-        this.z = 0;
+    public Point(String x, String y, String z) {
+        this(Integer.parseInt(x), Integer.parseInt(y), Integer.parseInt(z));
     }
 
-    public Point(Point other){
+    public Point(int x, int y) {
+        this(x, y, 0);
+    }
+
+    public Point(String x, String y) {
+        this(Integer.parseInt(x), Integer.parseInt(y));
+    }
+
+    public Point(Point other) {
         this(other.x, other.y, other.z);
     }
 
@@ -31,11 +37,11 @@ public class Point {
         }
     }
 
-    public static Point of(int x, int y, int z){
+    public static Point of(int x, int y, int z) {
         return new Point(x, y, z);
     }
 
-    public static Point of(int x, int y){
+    public static Point of(int x, int y) {
         return new Point(x, y);
     }
 

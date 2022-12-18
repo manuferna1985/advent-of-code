@@ -20,6 +20,10 @@ public class Pair<A, B> {
         return new Pair<>(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
     }
 
+    public boolean contains(Object o){
+        return a.equals(o) || b.equals(o);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
