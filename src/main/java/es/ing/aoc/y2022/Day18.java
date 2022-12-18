@@ -1,10 +1,13 @@
 package es.ing.aoc.y2022;
 
+import static es.ing.aoc.common.MathUtils.getStats;
+
 import es.ing.aoc.common.Day;
 import es.ing.aoc.common.Pair;
 import es.ing.aoc.common.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -94,23 +97,18 @@ public class Day18 extends Day {
 
     private List<Point> getSuperCube(List<Point> cubes) {
         List<Point> allMatrixCubes = new ArrayList<>();
-        List<Integer> xCoords = cubes.stream().map(Point::getX).sorted().collect(Collectors.toList());
-        Pair<Integer, Integer> xLimits = Pair.of(xCoords.get(0), xCoords.get(xCoords.size() - 1));
 
-        List<Integer> yCoords = cubes.stream().map(Point::getY).sorted().collect(Collectors.toList());
-        Pair<Integer, Integer> yLimits = Pair.of(yCoords.get(0), yCoords.get(yCoords.size() - 1));
+        IntSummaryStatistics xStats = getStats(cubes, Point::getX),
+                yStats = getStats(cubes, Point::getY),
+                zStats = getStats(cubes, Point::getZ);
 
-        List<Integer> zCoords = cubes.stream().map(Point::getZ).sorted().collect(Collectors.toList());
-        Pair<Integer, Integer> zLimits = Pair.of(zCoords.get(0), zCoords.get(zCoords.size() - 1));
-
-        for (int x = xLimits.a - 1; x <= xLimits.b + 1; x++) {
-            for (int y = yLimits.a - 1; y <= yLimits.b + 1; y++) {
-                for (int z = zLimits.a - 1; z <= zLimits.b + 1; z++) {
+        for (int x = xStats.getMin() - 1; x <= xStats.getMax() + 1; x++) {
+            for (int y = yStats.getMin() - 1; y <= yStats.getMax() + 1; y++) {
+                for (int z = zStats.getMin() - 1; z <= zStats.getMax() + 1; z++) {
                     allMatrixCubes.add(new Point(x, y, z));
                 }
             }
         }
-
         return allMatrixCubes;
     }
 
