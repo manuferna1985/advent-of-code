@@ -108,7 +108,7 @@ public class Day17 extends Day {
                 previousTop = currentTop;
             }
 
-            // This data has been manually calculated through the rocks cycles....
+            // TODO: This data has been manually calculated through the rocks cycles....
             if (maxRocksToFall.compareTo(BigInteger.valueOf(5000)) > 0) {
                 if (windStream.length == 40) {
                     while (rocksStopped.add(BigInteger.valueOf(140000)).compareTo(maxRocksToFall) < 0) {
