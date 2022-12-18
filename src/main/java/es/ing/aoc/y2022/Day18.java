@@ -64,13 +64,13 @@ public class Day18 extends Day {
                 .collect(Collectors.toList());
 
         if (filterSidesTouchingLava) {
-            return getNonTrappedSides(nonRepeatedSides, allCubes).size();
+            return filterSidesTouchingLava(nonRepeatedSides, allCubes).size();
         } else {
             return nonRepeatedSides.size();
         }
     }
 
-    private List<Pair<Point, Point>> getNonTrappedSides(List<Pair<Point, Point>> sides, List<Point> cubes) {
+    private List<Pair<Point, Point>> filterSidesTouchingLava(List<Pair<Point, Point>> sides, List<Point> cubes) {
 
         List<Point> superCube = this.getSuperCube(cubes);
         List<Point> cubesWithLava = getCubesWithLava(superCube.get(0), new ArrayList<>(), superCube, cubes);
