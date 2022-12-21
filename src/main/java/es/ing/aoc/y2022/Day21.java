@@ -1,10 +1,15 @@
 package es.ing.aoc.y2022;
 
+import static es.ing.aoc.common.MathUtils.binarySearch;
+import static es.ing.aoc.common.MathUtils.convertToFunction;
+
 import es.ing.aoc.common.Day;
+import es.ing.aoc.common.Pair;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -12,6 +17,7 @@ import org.apache.commons.lang3.Range;
 
 public class Day21 extends Day {
 
+    private static final Long MAX_RANGE = 100000000000000L;
     private static final Pattern COMPLEX_MONKEY = Pattern.compile("([a-z]+): ([a-z]+) ([+\\-*/]) ([a-z]+)");
     private static final Pattern SIMPLE_MONKEY = Pattern.compile("([a-z]+): ([0-9]+)");
     private static final String ROOT = "root";
@@ -37,52 +43,30 @@ public class Day21 extends Day {
     protected String part1(String fileContents) throws Exception {
         Map<String, Operation> pendingMonkeys = new HashMap<>();
         Map<String, Long> finishedMonkeys = new HashMap<>();
-
         readMonkeysData(fileContents, pendingMonkeys, finishedMonkeys);
-        guessMonkeyNumbers(pendingMonkeys, finishedMonkeys, false);
-
-        return String.valueOf(finishedMonkeys.get("root"));
+        guessMonkeyNumbers(pendingMonkeys, finishedMonkeys);
+        return String.valueOf(finishedMonkeys.get(ROOT));
     }
 
     @Override
     protected String part2(String fileContents) throws Exception {
         Map<String, Operation> pendingMonkeys = new HashMap<>();
         Map<String, Long> finishedMonkeys = new HashMap<>();
-
         readMonkeysData(fileContents, pendingMonkeys, finishedMonkeys);
 
-        Range<Long> limits = Range.between(-100000000000000L, 100000000000000L);
-
-        while (true) {
-            // Binary Search            
-            finishedMonkeys.put(HUMAN, limits.getMinimum());
-            int resultL = guessMonkeyNumbers(new HashMap<>(pendingMonkeys), new HashMap<>(finishedMonkeys), true);
-            if (resultL == 0) {
-                return String.valueOf(finishedMonkeys.get(HUMAN));
-            }
-
-            finishedMonkeys.put(HUMAN, limits.getMaximum());
-            int resultH = guessMonkeyNumbers(new HashMap<>(pendingMonkeys), new HashMap<>(finishedMonkeys), true);
-            if (resultH == 0) {
-                return String.valueOf(finishedMonkeys.get(HUMAN));
-            }
-
-            Long middleLimit = limits.getMinimum() + ((limits.getMaximum() - limits.getMinimum()) / 2);
-            finishedMonkeys.put(HUMAN, middleLimit);
-            int resultM = guessMonkeyNumbers(new HashMap<>(pendingMonkeys), new HashMap<>(finishedMonkeys), true);
-            if (resultM == 0) {
-                return String.valueOf(finishedMonkeys.get(HUMAN));
-            }
-
-            if (resultL == resultM) {
-                limits = Range.between(middleLimit, limits.getMaximum());
-            } else {
-                limits = Range.between(limits.getMinimum(), middleLimit);
-            }
-        }
+        return String.valueOf(
+                binarySearch(
+                        Range.between(-MAX_RANGE, MAX_RANGE),
+                        hum -> {
+                            finishedMonkeys.put(HUMAN, hum);
+                            return guessMonkeyNumbers(new HashMap<>(pendingMonkeys), new HashMap<>(finishedMonkeys));
+                        },
+                        result -> result == 0)
+                        .orElse(-1L));
     }
 
-    private int guessMonkeyNumbers(Map<String, Operation> pendingMonkeys, Map<String, Long> finishedMonkeys, boolean rootEqualCheck) {
+    private int guessMonkeyNumbers(Map<String, Operation> pendingMonkeys, Map<String, Long> finishedMonkeys) {
+        Operation op = null;
         while (!pendingMonkeys.isEmpty()) {
             List<String> possibleMonkeys = pendingMonkeys.entrySet().stream()
                     .filter(entry -> entry.getValue().getMonkeys().stream().allMatch(finishedMonkeys::containsKey))
@@ -90,55 +74,29 @@ public class Day21 extends Day {
                     .collect(Collectors.toList());
 
             for (String m : possibleMonkeys) {
-                Operation op = pendingMonkeys.get(m);
-
-                if (rootEqualCheck && ROOT.equals(m)) {
-                    return Long.compare(finishedMonkeys.get(op.firstMonkey), finishedMonkeys.get(op.secondMonkey));
-                } else {
-                    finishedMonkeys.put(m, op.function.apply(finishedMonkeys.get(op.firstMonkey), finishedMonkeys.get(op.secondMonkey)));
-                    pendingMonkeys.remove(m);
-                }
+                op = pendingMonkeys.get(m);
+                finishedMonkeys.put(m, op.function.apply(finishedMonkeys.get(op.firstMonkey), finishedMonkeys.get(op.secondMonkey)));
+                pendingMonkeys.remove(m);
             }
         }
-
-        return 0;
+        return op != null ? Long.compare(finishedMonkeys.get(op.firstMonkey), finishedMonkeys.get(op.secondMonkey)) : 0;
     }
 
     private void readMonkeysData(String fileContents, Map<String, Operation> pendingMonkeys, Map<String, Long> finishedMonkeys) {
         String[] monkeys = fileContents.split(System.lineSeparator()); // when input file is multiline
 
+        List<Pair<Pattern, Consumer<Matcher>>> patterns = List.of(
+                Pair.of(COMPLEX_MONKEY, matcher -> pendingMonkeys.put(matcher.group(1), new Operation(matcher.group(2), convertToFunction(matcher.group(3)), matcher.group(4)))),
+                Pair.of(SIMPLE_MONKEY, matcher -> finishedMonkeys.put(matcher.group(1), Long.parseLong(matcher.group(2)))));
+
         Matcher matcher;
         for (String m : monkeys) {
-            matcher = COMPLEX_MONKEY.matcher(m);
-
-            if (matcher.find()) {
-                // Complex
-                pendingMonkeys.put(matcher.group(1), new Operation(matcher.group(2), convertToFunction(matcher.group(3)), matcher.group(4)));
-            } else {
-                matcher = SIMPLE_MONKEY.matcher(m);
-
+            for (Pair<Pattern, Consumer<Matcher>> patternAndConsumer : patterns) {
+                matcher = patternAndConsumer.a.matcher(m);
                 if (matcher.find()) {
-                    // Simple
-                    finishedMonkeys.put(matcher.group(1), Long.parseLong(matcher.group(2)));
-                } else {
-                    throw new RuntimeException("Wrong input detected!");
+                    patternAndConsumer.b.accept(matcher);
                 }
             }
-        }
-    }
-
-    private BinaryOperator<Long> convertToFunction(String op) {
-        switch (op) {
-            case "+":
-                return (a, b) -> a + b;
-            case "-":
-                return (a, b) -> a - b;
-            case "*":
-                return (a, b) -> a * b;
-            case "/":
-                return (a, b) -> a / b;
-            default:
-                throw new RuntimeException("Wrong operation detected!");
         }
     }
 

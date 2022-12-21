@@ -6,8 +6,13 @@ import java.util.IntSummaryStatistics;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.Range;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 
 public class MathUtils {
@@ -48,5 +53,45 @@ public class MathUtils {
 
     public static <T> IntSummaryStatistics getStats(List<T> cubes, ToIntFunction<T> fn) {
         return cubes.stream().map(fn::applyAsInt).collect(Collectors.summarizingInt(Integer::intValue));
+    }
+
+    public static BinaryOperator<Long> convertToFunction(String op) {
+        switch (op) {
+            case "+":
+                return (a, b) -> a + b;
+            case "-":
+                return (a, b) -> a - b;
+            case "*":
+                return (a, b) -> a * b;
+            case "/":
+                return (a, b) -> a / b;
+            default:
+                throw new RuntimeException("Wrong operation detected!");
+        }
+    }
+
+    public static <T> Optional<Long> binarySearch(Range<Long> rng, Function<Long, T> searchFunction, Predicate<T> resultValidator) {
+        Long middleLimit = rng.getMinimum() + ((rng.getMaximum() - rng.getMinimum()) / 2);
+        T minResult = searchFunction.apply(rng.getMinimum());
+        if (resultValidator.test(minResult)) {
+            return Optional.of(rng.getMinimum());
+        }
+        T maxResult = searchFunction.apply(rng.getMaximum());
+        if (resultValidator.test(maxResult)) {
+            return Optional.of(rng.getMaximum());
+        }
+        if (minResult.equals(maxResult)) {
+            return Optional.empty();
+        } else {
+            T midResult = searchFunction.apply(middleLimit);
+            if (resultValidator.test(midResult)) {
+                return Optional.of(middleLimit);
+            }
+            if (minResult.equals(midResult)) {
+                return binarySearch(Range.between(middleLimit, rng.getMaximum()), searchFunction, resultValidator);
+            } else {
+                return binarySearch(Range.between(rng.getMinimum(), middleLimit), searchFunction, resultValidator);
+            }
+        }
     }
 }
