@@ -2,6 +2,7 @@ package es.ing.aoc.common;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.IntSummaryStatistics;
 import java.util.Iterator;
 import java.util.List;
@@ -51,7 +52,7 @@ public class MathUtils {
                 .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
     }
 
-    public static <T> IntSummaryStatistics getStats(List<T> cubes, ToIntFunction<T> fn) {
+    public static <T> IntSummaryStatistics getStats(Collection<T> cubes, ToIntFunction<T> fn) {
         return cubes.stream().map(fn::applyAsInt).collect(Collectors.summarizingInt(Integer::intValue));
     }
 

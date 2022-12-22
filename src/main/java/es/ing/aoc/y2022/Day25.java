@@ -19,6 +19,6 @@ public class Day25 extends Day {
     }
 
     public static void main(String[] args) {
-        Day.run(Day22::new, "2022/D25_small.txt", "2022/D25_full.txt");
+        Day.run(Day25::new, "2022/D25_small.txt", "2022/D25_full.txt");
     }
 }
