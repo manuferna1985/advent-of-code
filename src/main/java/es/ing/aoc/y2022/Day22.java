@@ -8,9 +8,12 @@ import es.ing.aoc.common.Day;
 import es.ing.aoc.common.MatrixUtils;
 import es.ing.aoc.common.Pair;
 import es.ing.aoc.common.Point;
+import es.ing.aoc.common.Tri;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -91,22 +94,30 @@ public class Day22 extends Day {
         public static Cell of(Tile tile, Point originPosition) {
             return new Cell(tile, originPosition);
         }
+
+        @Override
+        public String toString() {
+            return tile.letter;
+        }
     }
 
     @Override
     protected String part1(String fileContents) throws Exception {
         Cell[][] board = readBoardFromFile(fileContents);
         List<String> instructions = getInstructions(fileContents);
-        Pair<Point, Direction> start = Pair.of(getStartingPoint(board), Direction.RIGHT);
-        Pair<Point, Direction> end = followPath(board, instructions, start);
+        Pair<Cell, Direction> start = Pair.of(getStartingPoint(board), Direction.RIGHT);
+        Pair<Point, Direction> end = followPath(board, instructions, start, new HashMap<>());
         return String.valueOf(getPositionPoints(end));
     }
 
     @Override
     protected String part2(String fileContents) throws Exception {
         Cell[][] board = readBoardFromFile(fileContents);
-        transformBoardToStandardCube(board, inferSideSizeFromBoard(board));
-        return String.valueOf(2);
+        List<String> instructions = getInstructions(fileContents);
+        Pair<Cell, Direction> start = Pair.of(getStartingPoint(board), Direction.RIGHT);
+        Map<Point, List<Tri<Direction, Point, Turn>>> specialJumps = transformBoardToStandardCube(board, inferSideSizeFromBoard(board), start);
+        Pair<Point, Direction> end = followPath(board, instructions, start, specialJumps);
+        return String.valueOf(getPositionPoints(end));
     }
 
     private int getPositionPoints(Pair<Point, Direction> position) {
@@ -121,9 +132,12 @@ public class Day22 extends Day {
         return Math.max(rows, cols) - Math.min(rows, cols);
     }
 
-    private Pair<Point, Direction> followPath(Cell[][] board, List<String> instructions, Pair<Point, Direction> start) {
+    private Pair<Point, Direction> followPath(Cell[][] board, List<String> instructions, Pair<Cell, Direction> start, Map<Point, List<Tri<Direction, Point, Turn>>> specialJumps) {
 
-        Pair<Point, Direction> current = start;
+        Pair<Point, Direction> current = Pair.of(getCellCurrentPositionInBoard(board, start.a), start.b);
+
+        System.out.println(current);
+        printBoard(board);
 
         for (String order : instructions) {
             if (TURN_RIGHT.equals(order)) {
@@ -134,9 +148,9 @@ public class Day22 extends Day {
                 int pathLength = Integer.parseInt(order);
 
                 for (int i = 0; i < pathLength; i++) {
-                    Pair<Point, Direction> newPos = moveToSafePosition(current, board);
+                    Pair<Point, Direction> newPos = moveToSafePosition(current, board, specialJumps);
                     while (VOID.equals(board[newPos.a.x][newPos.a.y].tile)) {
-                        newPos = moveToSafePosition(newPos, board);
+                        newPos = moveToSafePosition(newPos, board, specialJumps);
                     }
                     if (FLOOR.equals(board[newPos.a.x][newPos.a.y].tile)) {
                         current = newPos;
@@ -149,9 +163,27 @@ public class Day22 extends Day {
         return current;
     }
 
-    private Pair<Point, Direction> moveToSafePosition(Pair<Point, Direction> current, Cell[][] board) {
+    private Point getCellCurrentPositionInBoard(Cell[][] board, Cell cell) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                if (cell.equals(board[i][j])) {
+                    return new Point(i, j);
+                }
+            }
+        }
+        throw new RuntimeException("Cell not found!");
+    }
+
+    private Pair<Point, Direction> moveToSafePosition(Pair<Point, Direction> current, Cell[][] board, Map<Point, List<Tri<Direction, Point, Turn>>> specialJumps) {
         Point newPos = current.b.fn.apply(current.a);
-        return Pair.of(new Point((newPos.x + board.length) % board.length, (newPos.y + board[0].length) % board[0].length), current.b);
+        newPos = new Point((newPos.x + board.length) % board.length, (newPos.y + board[0].length) % board[0].length);
+        Direction newDirection = current.b;
+
+        if (!specialJumps.isEmpty() && VOID.equals(board[newPos.x][newPos.y].tile)){
+            System.out.printf("Applying special jump on %s pointing to %s\n", current.a, newDirection);
+        }
+
+        return Pair.of(newPos, newDirection);
     }
 
     private List<String> getInstructions(String fileContents) {
@@ -201,9 +233,9 @@ public class Day22 extends Day {
         System.out.println("-------------------------------------------");
     }
 
-    private void transformBoardToStandardCube(Cell[][] board, int dim) {
-
+    private Map<Point, List<Tri<Direction, Point, Turn>>> transformBoardToStandardCube(Cell[][] board, int dim, Pair<Cell, Direction> start) {
         boolean shapedCube = false;
+        boolean vertical = false;
         do {
             List<Point> sides = calculateActiveSidesFromBoard(board, dim);
             System.out.println("Current sides: " + sides);
@@ -214,46 +246,46 @@ public class Day22 extends Day {
             int verticalCubes = (int) sides.stream().filter(p -> p.y == baseCoord).count();
 
             if (horizontalCubes == 4) {
-
                 Point topCube = sides.stream().filter(p -> p.x == baseCoord - 1).findFirst().orElseThrow(() -> new RuntimeException("Wrong cube!"));
                 Point downCube = sides.stream().filter(p -> p.x == baseCoord + 1).findFirst().orElseThrow(() -> new RuntimeException("Wrong cube!"));
 
                 if (topCube.y > baseCoord) {
-                    rotateAndMoveSide(board, topCube, dim, Turn.LEFT, Direction.LEFT);
+                    rotateAndMoveSide(board, topCube, dim, Turn.LEFT, Direction.LEFT, start);
                 } else if (topCube.y < baseCoord) {
-                    rotateAndMoveSide(board, topCube, dim, Turn.RIGHT, Direction.RIGHT);
+                    rotateAndMoveSide(board, topCube, dim, Turn.RIGHT, Direction.RIGHT, start);
                 } else {
                     System.out.println("Top cube is OK!");
                 }
                 if (downCube.y > baseCoord) {
-                    rotateAndMoveSide(board, downCube, dim, Turn.RIGHT, Direction.LEFT);
+                    rotateAndMoveSide(board, downCube, dim, Turn.RIGHT, Direction.LEFT, start);
                 } else if (downCube.y < baseCoord) {
-                    rotateAndMoveSide(board, downCube, dim, Turn.LEFT, Direction.RIGHT);
+                    rotateAndMoveSide(board, downCube, dim, Turn.LEFT, Direction.RIGHT, start);
                 } else {
                     System.out.println("Down cube is OK!");
                 }
                 shapedCube = topCube.y == baseCoord && downCube.y == baseCoord;
+                vertical = false;
 
             } else if (verticalCubes == 4) {
-
                 Point leftCube = sides.stream().filter(p -> p.y == baseCoord - 1).findFirst().orElseThrow(() -> new RuntimeException("Wrong cube!"));
                 Point rightCube = sides.stream().filter(p -> p.y == baseCoord + 1).findFirst().orElseThrow(() -> new RuntimeException("Wrong cube!"));
 
                 if (leftCube.x > baseCoord) {
-                    rotateAndMoveSide(board, leftCube, dim, Turn.RIGHT, Direction.UP);
+                    rotateAndMoveSide(board, leftCube, dim, Turn.RIGHT, Direction.UP, start);
                 } else if (leftCube.x < baseCoord) {
-                    rotateAndMoveSide(board, leftCube, dim, Turn.LEFT, Direction.DOWN);
+                    rotateAndMoveSide(board, leftCube, dim, Turn.LEFT, Direction.DOWN, start);
                 } else {
                     System.out.println("Left cube is OK!");
                 }
                 if (rightCube.x > baseCoord) {
-                    rotateAndMoveSide(board, rightCube, dim, Turn.LEFT, Direction.UP);
+                    rotateAndMoveSide(board, rightCube, dim, Turn.LEFT, Direction.UP, start);
                 } else if (rightCube.x < baseCoord) {
-                    rotateAndMoveSide(board, rightCube, dim, Turn.RIGHT, Direction.DOWN);
+                    rotateAndMoveSide(board, rightCube, dim, Turn.RIGHT, Direction.DOWN, start);
                 } else {
                     System.out.println("Right cube is OK!");
                 }
                 shapedCube = leftCube.x == baseCoord && rightCube.x == baseCoord;
+                vertical = true;
 
             } else if (horizontalCubes == 3) {
                 int leftCol = sides.stream().filter(p -> p.x == baseCoord).mapToInt(p -> p.y).min().orElse(-1);
@@ -278,13 +310,13 @@ public class Day22 extends Day {
                 System.out.println("First corner(relative): " + firstCorner);
 
                 if (firstCorner.x > baseCoord && firstCorner.y > rightCol) {
-                    rotateAndMoveSide(board, firstCorner, dim, Turn.LEFT, Direction.UP);
+                    rotateAndMoveSide(board, firstCorner, dim, Turn.LEFT, Direction.UP, start);
                 } else if (firstCorner.x > baseCoord && firstCorner.y < leftCol) {
-                    rotateAndMoveSide(board, firstCorner, dim, Turn.RIGHT, Direction.UP);
+                    rotateAndMoveSide(board, firstCorner, dim, Turn.RIGHT, Direction.UP, start);
                 } else if (firstCorner.x < baseCoord && firstCorner.y > rightCol) {
-                    rotateAndMoveSide(board, firstCorner, dim, Turn.RIGHT, Direction.DOWN);
+                    rotateAndMoveSide(board, firstCorner, dim, Turn.RIGHT, Direction.DOWN, start);
                 } else {
-                    rotateAndMoveSide(board, firstCorner, dim, Turn.LEFT, Direction.DOWN);
+                    rotateAndMoveSide(board, firstCorner, dim, Turn.LEFT, Direction.DOWN, start);
                 }
             } else if (verticalCubes == 3) {
                 int topRow = sides.stream().filter(p -> p.y == baseCoord).mapToInt(p -> p.x).min().orElse(-1);
@@ -309,55 +341,85 @@ public class Day22 extends Day {
                 System.out.println("First corner(relative): " + firstCorner);
 
                 if (firstCorner.y > baseCoord && firstCorner.x > downRow) {
-                    rotateAndMoveSide(board, firstCorner, dim, Turn.RIGHT, Direction.LEFT);
+                    rotateAndMoveSide(board, firstCorner, dim, Turn.RIGHT, Direction.LEFT, start);
                 } else if (firstCorner.y > baseCoord && firstCorner.x < topRow) {
-                    rotateAndMoveSide(board, firstCorner, dim, Turn.LEFT, Direction.LEFT);
+                    rotateAndMoveSide(board, firstCorner, dim, Turn.LEFT, Direction.LEFT, start);
                 } else if (firstCorner.y < baseCoord && firstCorner.x > downRow) {
-                    rotateAndMoveSide(board, firstCorner, dim, Turn.LEFT, Direction.RIGHT);
+                    rotateAndMoveSide(board, firstCorner, dim, Turn.LEFT, Direction.RIGHT, start);
                 } else {
-                    rotateAndMoveSide(board, firstCorner, dim, Turn.RIGHT, Direction.RIGHT);
+                    rotateAndMoveSide(board, firstCorner, dim, Turn.RIGHT, Direction.RIGHT, start);
                 }
 
             } else {
                 throw new RuntimeException("No base condition detected. Is input cube a correct shaped cube?");
             }
-
         } while (!shapedCube);
 
-/*
-        Map<Point, List<Pair<Direction, Point>>> sideNeighbours = new HashMap<>();
-        sides.forEach(s -> sideNeighbours.put(s, new ArrayList<>()));
+        System.out.println("Kind of cube is: " + (vertical ? "VERTICAL" : "HORIZONTAL"));
 
-        Point p;
-        for (Point side : sides) {
-            // Natural neighbours
-            for (Direction dir : Direction.values()) {
-                p = dir.fn.apply(side);
-                if (sides.contains(p)) {
-                    sideNeighbours.get(side).add(Pair.of(dir, p));
-                }
-            }
+        final Map<Point, List<Tri<Direction, Point, Turn>>> sideNeighbours = new HashMap<>();
+
+        // 90 degree turns
+        sideNeighbours.put(new Point(0, 1), new ArrayList<>(List.of(
+                Tri.of(Direction.LEFT, new Point(1, 0), Turn.LEFT),
+                Tri.of(Direction.RIGHT, new Point(1, 2), Turn.RIGHT))));
+
+        sideNeighbours.put(new Point(1, 0), new ArrayList<>(List.of(
+                Tri.of(Direction.DOWN, new Point(2, 1), Turn.LEFT),
+                Tri.of(Direction.UP, new Point(0, 1), Turn.RIGHT))));
+
+        sideNeighbours.put(new Point(2, 1), new ArrayList<>(List.of(
+                Tri.of(Direction.RIGHT, new Point(1, 2), Turn.LEFT),
+                Tri.of(Direction.LEFT, new Point(1, 0), Turn.RIGHT))));
+
+        sideNeighbours.put(new Point(1, 2), new ArrayList<>(List.of(
+                Tri.of(Direction.UP, new Point(0, 1), Turn.LEFT),
+                Tri.of(Direction.DOWN, new Point(2, 1), Turn.RIGHT))));
+
+        // Reverse turns
+        if (vertical) {
+            // vertical cross
+            sideNeighbours.get(new Point(1, 0)).add(
+                    Tri.of(Direction.LEFT, new Point(3, 1), Turn.REVERSE));
+
+            sideNeighbours.get(new Point(1, 2)).add(
+                    Tri.of(Direction.RIGHT, new Point(3, 1), Turn.REVERSE));
+
+        } else {
+            // horizontal cross
+            sideNeighbours.get(new Point(0, 1)).add(
+                    Tri.of(Direction.UP, new Point(1, 3), Turn.REVERSE));
+
+            sideNeighbours.get(new Point(2, 1)).add(
+                    Tri.of(Direction.DOWN, new Point(1, 3), Turn.REVERSE));
         }
 
-        System.out.println(sideNeighbours);
-
- */
+        return sideNeighbours;
     }
 
-    private void rotateAndMoveSide(Cell[][] board, Point side, int dim, Turn turn, Direction movement) {
+    private void rotateAndMoveSide(Cell[][] board, Point side, int dim, Turn turn, Direction movement, Pair<Cell, Direction> start) {
         System.out.printf(" >>>>> Rotate & Move command: %s - %s - %s\n", side, turn, movement);
         Point realCoords = new Point(side.x * dim, side.y * dim);
 
         switch (turn) {
             case LEFT:
                 MatrixUtils.rotateLeft(Cell.class, board, realCoords, dim);
+                if (submatrixContainsPoint(board, realCoords, dim, start.a)) {
+                    start.b = start.b.turnLeft();
+                }
                 break;
             case RIGHT:
                 MatrixUtils.rotateRight(Cell.class, board, realCoords, dim);
+                if (submatrixContainsPoint(board, realCoords, dim, start.a)) {
+                    start.b = start.b.turnRight();
+                }
                 break;
             case REVERSE:
                 MatrixUtils.rotateLeft(Cell.class, board, realCoords, dim);
                 MatrixUtils.rotateLeft(Cell.class, board, realCoords, dim);
+                if (submatrixContainsPoint(board, realCoords, dim, start.a)) {
+                    start.b = start.b.turnLeft().turnLeft();
+                }
                 break;
             case NONE:
                 System.out.println("No rotation needed!");
@@ -377,6 +439,17 @@ public class Day22 extends Day {
                 MatrixUtils.moveSubMatrix(board, realCoords, new Point(realCoords.x, realCoords.y + dim), dim, createNewVoid());
                 break;
         }
+    }
+
+    private boolean submatrixContainsPoint(Cell[][] board, Point origin, int dim, Cell startCell) {
+        for (int x = origin.x; x < origin.x + dim; x++) {
+            for (int y = origin.y; y < origin.y + dim; y++) {
+                if (startCell.equals(board[x][y])) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private List<Point> calculateActiveSidesFromBoard(Cell[][] board, int dim) {
@@ -413,10 +486,10 @@ public class Day22 extends Day {
         }
     }
 
-    private Point getStartingPoint(Cell[][] board) {
+    private Cell getStartingPoint(Cell[][] board) {
         for (int j = 0; j < board[0].length; j++) {
             if (FLOOR.equals(board[0][j].tile)) {
-                return new Point(0, j);
+                return board[0][j];
             }
         }
 
@@ -424,6 +497,6 @@ public class Day22 extends Day {
     }
 
     public static void main(String[] args) {
-        Day.run(Day22::new, "2022/D22_small.txt", "2022/D22_full.txt");
+        Day.run(Day22::new, "2022/D22_small.txt");//, "2022/D22_full.txt");
     }
 }
