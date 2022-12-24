@@ -4,8 +4,9 @@ import es.ing.aoc.common.Day;
 import es.ing.aoc.common.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 
 public class Day24 extends Day {
@@ -115,10 +116,10 @@ public class Day24 extends Day {
 
         final Direction[] prefs = {Direction.RIGHT, Direction.DOWN, Direction.UP, Direction.LEFT};
 
-        Point human = new Point(start);
+        Set<Point> humans = new HashSet<>(List.of(start));
         int minute = 0;
         do {
-            System.out.println(minute);
+            System.out.printf("%-5d - %d\n", minute, humans.size());
 
             // Lizzards movements
             for (Lizzard liz : lizzards) {
@@ -140,31 +141,37 @@ public class Day24 extends Day {
                             break;
                     }
                 }
-
                 matrix[liz.x][liz.y]--;
                 matrix[newPos.x][newPos.y]++;
                 liz.updatePosition(newPos);
             }
 
             // Human movements
-            int initialPref = 0; //new Random().nextInt(prefs.length);
-            for (int i=0; i< prefs.length; i++){
-                Direction d = prefs[(i+initialPref) % prefs.length];
-                Point newPos = d.fn.apply(human);
-                if (newPos.x >= 0 && newPos.y >= 0 && matrix[newPos.x][newPos.y] == 0){
-                    human = newPos;
-                    break;
+            Set<Point> nextGenHumans = new HashSet<>();
+            for (Point human : humans) {
+                if (matrix[human.x][human.y] == 0) {
+                    System.out.printf("\t%s --> %s\n", human, human);
+                    nextGenHumans.add(human);
+                }
+
+                for (Direction d : prefs) {
+                    Point newPos = d.fn.apply(human);
+                    if (newPos.x >= 0 && newPos.y >= 0 && matrix[newPos.x][newPos.y] == 0) {
+                        System.out.printf("\t%s --> %s\n", human, newPos);
+                        nextGenHumans.add(newPos);
+                    }
                 }
             }
-
+            humans.clear();
+            humans.addAll(nextGenHumans);
             minute++;
 
-        } while (!human.equals(end));
+        } while (!humans.contains(end));
 
         return minute;
     }
 
     public static void main(String[] args) {
-        Day.run(Day24::new, "2022/D24_full.txt");
+        Day.run(Day24::new, "2022/D24_small.txt", "2022/D24_full.txt");
     }
 }
