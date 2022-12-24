@@ -14,9 +14,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.function.TriFunction;
 
 public class Day22 extends Day {
 
@@ -73,13 +76,59 @@ public class Day22 extends Day {
         public Direction turnLeft() {
             return Direction.of((points - 1 + 4) % 4);
         }
+
+        public Direction turn(Turn t) {
+            switch (t) {
+                case LEFT:
+                    return turnLeft();
+                case RIGHT:
+                    return turnRight();
+                case REVERSE:
+                    return turnLeft().turnLeft();
+                default:
+                    return this;
+            }
+        }
+    }
+
+    public enum SpecialDirection {
+        UP_LEFT((p1, b2, size) -> new Point(p1.x - 1, p1.y - 1),
+                List.of(Pair.of(Direction.UP, Turn.LEFT), Pair.of(Direction.LEFT, Turn.RIGHT))),
+        UP_RIGHT((p1, b2, size) -> new Point(p1.x - 1, p1.y + 1),
+                List.of(Pair.of(Direction.RIGHT, Turn.LEFT), Pair.of(Direction.UP, Turn.RIGHT))),
+        DOWN_LEFT((p1, b2, size) -> new Point(p1.x + 1, p1.y - 1),
+                List.of(Pair.of(Direction.DOWN, Turn.RIGHT), Pair.of(Direction.LEFT, Turn.LEFT))),
+        DOWN_RIGHT((p1, b2, size) -> new Point(p1.x + 1, p1.y + 1),
+                List.of(Pair.of(Direction.RIGHT, Turn.RIGHT), Pair.of(Direction.DOWN, Turn.LEFT))),
+
+        VERTICAL_BACKFLIP((p1, b2, size) -> {
+            Point b1 = getBaseSideFromPoint(p1, size);
+            int p2x = (p1.x - b1.x * size) + (b2.x * size);
+            int p2y = ((size - 1) - (p1.y % size)) + ((b2.y) * size);
+            return new Point(p2x, p2y);
+        }, List.of(Pair.of(Direction.DOWN, Turn.REVERSE), Pair.of(Direction.UP, Turn.REVERSE))),
+
+        HORIZONTAL_BACKFLIP((p1, b2, size) -> {
+            Point b1 = getBaseSideFromPoint(p1, size);
+            int p2x = ((size - 1) - (p1.x % size)) + ((b2.x) * size);
+            int p2y = (p1.y - b1.y * size) + (b2.y * size);
+            return new Point(p2x, p2y);
+        }, List.of(Pair.of(Direction.LEFT, Turn.REVERSE), Pair.of(Direction.RIGHT, Turn.REVERSE)));
+
+        private final TriFunction<Point, Point, Integer, Point> fn;
+        private final List<Pair<Direction, Turn>> applyWhen;
+
+        SpecialDirection(TriFunction<Point, Point, Integer, Point> fn, List<Pair<Direction, Turn>> applyWhen) {
+            this.fn = fn;
+            this.applyWhen = applyWhen;
+        }
     }
 
     public enum Turn {
         RIGHT,
         LEFT,
         REVERSE,
-        NONE;
+        NONE
     }
 
     static class Cell {
@@ -106,7 +155,8 @@ public class Day22 extends Day {
         Cell[][] board = readBoardFromFile(fileContents);
         List<String> instructions = getInstructions(fileContents);
         Pair<Cell, Direction> start = Pair.of(getStartingPoint(board), Direction.RIGHT);
-        Pair<Point, Direction> end = followPath(board, instructions, start, new HashMap<>());
+        int sidesSize = inferSideSizeFromBoard(board);
+        Pair<Cell, Direction> end = followPath(board, instructions, start, new HashMap<>(), sidesSize);
         return String.valueOf(getPositionPoints(end));
     }
 
@@ -115,13 +165,14 @@ public class Day22 extends Day {
         Cell[][] board = readBoardFromFile(fileContents);
         List<String> instructions = getInstructions(fileContents);
         Pair<Cell, Direction> start = Pair.of(getStartingPoint(board), Direction.RIGHT);
-        Map<Point, List<Tri<Direction, Point, Turn>>> specialJumps = transformBoardToStandardCube(board, inferSideSizeFromBoard(board), start);
-        Pair<Point, Direction> end = followPath(board, instructions, start, specialJumps);
+        int sidesSize = inferSideSizeFromBoard(board);
+        Map<Point, List<Tri<Direction, Point, Turn>>> specialJumps = transformBoardToStandardCube(board, sidesSize, start);
+        Pair<Cell, Direction> end = followPath(board, instructions, start, specialJumps, sidesSize);
         return String.valueOf(getPositionPoints(end));
     }
 
-    private int getPositionPoints(Pair<Point, Direction> position) {
-        return ((position.a.x + 1) * 1000) + ((position.a.y + 1) * 4) + position.b.points;
+    private int getPositionPoints(Pair<Cell, Direction> position) {
+        return ((position.a.originPosition.x + 1) * 1000) + ((position.a.originPosition.y + 1) * 4) + position.b.points;
     }
 
     private int inferSideSizeFromBoard(Cell[][] board) {
@@ -132,7 +183,12 @@ public class Day22 extends Day {
         return Math.max(rows, cols) - Math.min(rows, cols);
     }
 
-    private Pair<Point, Direction> followPath(Cell[][] board, List<String> instructions, Pair<Cell, Direction> start, Map<Point, List<Tri<Direction, Point, Turn>>> specialJumps) {
+    private Pair<Cell, Direction> followPath(
+            Cell[][] board,
+            List<String> instructions,
+            Pair<Cell, Direction> start,
+            Map<Point, List<Tri<Direction, Point, Turn>>> specialJumps,
+            int sidesSize) {
 
         Pair<Point, Direction> current = Pair.of(getCellCurrentPositionInBoard(board, start.a), start.b);
 
@@ -148,9 +204,9 @@ public class Day22 extends Day {
                 int pathLength = Integer.parseInt(order);
 
                 for (int i = 0; i < pathLength; i++) {
-                    Pair<Point, Direction> newPos = moveToSafePosition(current, board, specialJumps);
+                    Pair<Point, Direction> newPos = moveToSafePosition(current, board, specialJumps, sidesSize);
                     while (VOID.equals(board[newPos.a.x][newPos.a.y].tile)) {
-                        newPos = moveToSafePosition(newPos, board, specialJumps);
+                        newPos = moveToSafePosition(newPos, board, specialJumps, sidesSize);
                     }
                     if (FLOOR.equals(board[newPos.a.x][newPos.a.y].tile)) {
                         current = newPos;
@@ -160,7 +216,7 @@ public class Day22 extends Day {
                 }
             }
         }
-        return current;
+        return Pair.of(board[current.a.x][current.a.y], current.b);
     }
 
     private Point getCellCurrentPositionInBoard(Cell[][] board, Cell cell) {
@@ -174,16 +230,53 @@ public class Day22 extends Day {
         throw new RuntimeException("Cell not found!");
     }
 
-    private Pair<Point, Direction> moveToSafePosition(Pair<Point, Direction> current, Cell[][] board, Map<Point, List<Tri<Direction, Point, Turn>>> specialJumps) {
+    private Pair<Point, Direction> moveToSafePosition(
+            Pair<Point, Direction> current,
+            Cell[][] board,
+            Map<Point, List<Tri<Direction, Point, Turn>>> specialJumps,
+            int sidesSize) {
+
         Point newPos = current.b.fn.apply(current.a);
         newPos = new Point((newPos.x + board.length) % board.length, (newPos.y + board[0].length) % board[0].length);
-        Direction newDirection = current.b;
+        final AtomicReference<Direction> newDirection = new AtomicReference<>(current.b);
 
-        if (!specialJumps.isEmpty() && VOID.equals(board[newPos.x][newPos.y].tile)){
+        if (!specialJumps.isEmpty() && VOID.equals(board[newPos.x][newPos.y].tile)) {
             System.out.printf("Applying special jump on %s pointing to %s\n", current.a, newDirection);
+            Point baseSidePoint = getBaseSideFromPoint(current.a, sidesSize);
+
+            if (specialJumps.containsKey(baseSidePoint)) {
+                // Origin has any special dir
+                Optional<Tri<Direction, Point, Turn>> specialDir = specialJumps.get(baseSidePoint).stream()
+                        .filter(specDirTrio -> specDirTrio.a.equals(newDirection.get())).findFirst();
+
+                if (specialDir.isPresent()) {
+                    // A special dir coincides with the current one.
+                    Pair<Direction, Turn> op = Pair.of(newDirection.get(), specialDir.get().c);
+
+                    SpecialDirection dir = Arrays.stream(SpecialDirection.values())
+                            .filter(sd -> sd.applyWhen.contains(op))
+                            .findFirst()
+                            .orElseThrow(() -> new RuntimeException("No special direction matching the Direction and Turn received!"));
+
+                    System.out.println(dir);
+
+                    // Move point through the non-collateral cube sides
+                    newPos = current.a;
+                    do {
+                        newPos = dir.fn.apply(newPos, specialDir.get().b, sidesSize);
+                    } while (VOID.equals(board[newPos.x][newPos.y].tile));
+
+                    // Apply new direction
+                    newDirection.set(newDirection.get().turn(specialDir.get().c));
+                }
+            }
         }
 
-        return Pair.of(newPos, newDirection);
+        return Pair.of(newPos, newDirection.get());
+    }
+
+    private static Point getBaseSideFromPoint(Point point, int sidesSize) {
+        return new Point(point.x / sidesSize, point.y / sidesSize);
     }
 
     private List<String> getInstructions(String fileContents) {
@@ -379,19 +472,19 @@ public class Day22 extends Day {
         // Reverse turns
         if (vertical) {
             // vertical cross
-            sideNeighbours.get(new Point(1, 0)).add(
-                    Tri.of(Direction.LEFT, new Point(3, 1), Turn.REVERSE));
-
-            sideNeighbours.get(new Point(1, 2)).add(
-                    Tri.of(Direction.RIGHT, new Point(3, 1), Turn.REVERSE));
+            sideNeighbours.get(new Point(1, 0)).add(Tri.of(Direction.LEFT, new Point(3, 1), Turn.REVERSE));
+            sideNeighbours.get(new Point(1, 2)).add(Tri.of(Direction.RIGHT, new Point(3, 1), Turn.REVERSE));
+            sideNeighbours.put(new Point(3, 1), List.of(
+                    Tri.of(Direction.LEFT, new Point(1, 0), Turn.REVERSE),
+                    Tri.of(Direction.RIGHT, new Point(1, 2), Turn.REVERSE)));
 
         } else {
             // horizontal cross
-            sideNeighbours.get(new Point(0, 1)).add(
-                    Tri.of(Direction.UP, new Point(1, 3), Turn.REVERSE));
-
-            sideNeighbours.get(new Point(2, 1)).add(
-                    Tri.of(Direction.DOWN, new Point(1, 3), Turn.REVERSE));
+            sideNeighbours.get(new Point(0, 1)).add(Tri.of(Direction.UP, new Point(1, 3), Turn.REVERSE));
+            sideNeighbours.get(new Point(2, 1)).add(Tri.of(Direction.DOWN, new Point(1, 3), Turn.REVERSE));
+            sideNeighbours.put(new Point(1, 3), List.of(
+                    Tri.of(Direction.UP, new Point(0, 1), Turn.REVERSE),
+                    Tri.of(Direction.DOWN, new Point(2, 1), Turn.REVERSE)));
         }
 
         return sideNeighbours;
@@ -497,6 +590,6 @@ public class Day22 extends Day {
     }
 
     public static void main(String[] args) {
-        Day.run(Day22::new, "2022/D22_small.txt");//, "2022/D22_full.txt");
+        Day.run(Day22::new, "2022/D22_small.txt", "2022/D22_full.txt");
     }
 }

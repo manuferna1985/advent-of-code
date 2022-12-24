@@ -19,6 +19,13 @@ class Day22Test {
     void testFullProblem() {
         Pair<String, String> results = Day.run(Day22::new, "2022/D22_full.txt");
         assertEquals("131052", results.a);
-        assertEquals("2", results.b);
+        assertEquals("56319", results.b);
+    }
+
+    @Test
+    void testCustomProblem() {
+        Pair<String, String> results = Day.run(Day22::new, "2022/D22_custom.txt");
+        assertEquals("31568", results.a);
+        assertEquals("106071", results.b);
     }
 }
