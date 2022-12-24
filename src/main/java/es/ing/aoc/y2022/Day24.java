@@ -11,6 +11,9 @@ import java.util.function.UnaryOperator;
 
 public class Day24 extends Day {
 
+    private static final Integer EMPTY = 0;
+    private static final Integer WALL = Integer.MAX_VALUE;
+
     public enum Direction {
         UP("^", p -> new Point(p.x - 1, p.y)),
         LEFT("<", p -> new Point(p.x, p.y - 1)),
@@ -53,24 +56,28 @@ public class Day24 extends Day {
 
     @Override
     protected String part1(String fileContents) throws Exception {
-
-        List<Lizzard> lizzards = readBoardFromFile(fileContents);
-        int[][] matrix = createCurrentMatrixFrom(lizzards, fileContents);
-
-        int minMovements = lizzardsLoop(
-                lizzards,
-                matrix,
-                new Point(0, 1),
-                new Point(matrix.length - 1, matrix[0].length - 2));
-
-        return String.valueOf(minMovements);
+        return lizzardsAlgorithm(fileContents, false);
     }
 
     @Override
     protected String part2(String fileContents) throws Exception {
-        String[] packages = fileContents.split(System.lineSeparator()); // when input file is multiline
+        return lizzardsAlgorithm(fileContents, true);
+    }
 
-        return String.valueOf(2);
+    private String lizzardsAlgorithm(String fileContents, boolean tripBackAndForward) {
+        List<Lizzard> lizzards = readBoardFromFile(fileContents);
+        int[][] matrix = createCurrentMatrixFrom(lizzards, fileContents);
+
+        Point start = new Point(0, 1);
+        Point end = new Point(matrix.length - 1, matrix[0].length - 2);
+
+        int minMovements = lizzardsLoop(lizzards, matrix, start, end);
+        if (tripBackAndForward) {
+            minMovements += lizzardsLoop(lizzards, matrix, end, start);
+            minMovements += lizzardsLoop(lizzards, matrix, start, end);
+        }
+
+        return String.valueOf(minMovements);
     }
 
     private List<Lizzard> readBoardFromFile(String fileContents) {
@@ -98,12 +105,14 @@ public class Day24 extends Day {
         for (int x = 0; x < matrix.length; x++) {
             for (int y = 0; y < matrix[x].length; y++) {
                 if (x == 0 || y == 0 || x == matrix.length - 1 || y == matrix[0].length - 1) {
-                    matrix[x][y] = Integer.MAX_VALUE;
+                    matrix[x][y] = WALL;
+                } else {
+                    matrix[x][y] = EMPTY;
                 }
             }
         }
-        matrix[0][1] = 0;
-        matrix[matrix.length - 1][matrix[0].length - 2] = 0;
+        matrix[0][1] = EMPTY;
+        matrix[matrix.length - 1][matrix[0].length - 2] = EMPTY;
 
         for (Lizzard liz : lizzards) {
             matrix[liz.x][liz.y]++;
@@ -119,13 +128,11 @@ public class Day24 extends Day {
         Set<Point> humans = new HashSet<>(List.of(start));
         int minute = 0;
         do {
-            System.out.printf("%-5d - %d\n", minute, humans.size());
-
             // Lizzards movements
             for (Lizzard liz : lizzards) {
                 Point newPos = liz.dir.fn.apply(liz);
 
-                if (matrix[newPos.x][newPos.y] == Integer.MAX_VALUE) {
+                if (matrix[newPos.x][newPos.y] == WALL) {
                     switch (liz.dir) {
                         case DOWN:
                             newPos = new Point(1, newPos.y);
@@ -149,15 +156,13 @@ public class Day24 extends Day {
             // Human movements
             Set<Point> nextGenHumans = new HashSet<>();
             for (Point human : humans) {
-                if (matrix[human.x][human.y] == 0) {
-                    System.out.printf("\t%s --> %s\n", human, human);
+                if (matrix[human.x][human.y] == EMPTY) {
                     nextGenHumans.add(human);
                 }
 
                 for (Direction d : prefs) {
                     Point newPos = d.fn.apply(human);
-                    if (newPos.x >= 0 && newPos.y >= 0 && matrix[newPos.x][newPos.y] == 0) {
-                        System.out.printf("\t%s --> %s\n", human, newPos);
+                    if (positionWithinLimits(newPos, matrix) && matrix[newPos.x][newPos.y] == EMPTY) {
                         nextGenHumans.add(newPos);
                     }
                 }
@@ -169,6 +174,10 @@ public class Day24 extends Day {
         } while (!humans.contains(end));
 
         return minute;
+    }
+
+    private boolean positionWithinLimits(Point newPos, int[][] matrix) {
+        return newPos.x >= 0 && newPos.x <= matrix.length - 1 && newPos.y >= 0 && newPos.y <= matrix[0].length - 1;
     }
 
     public static void main(String[] args) {
