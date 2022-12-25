@@ -4,8 +4,7 @@ import es.ing.aoc.common.Day;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.NotImplementedException;
 
 public class Day25 extends Day {
 
@@ -53,21 +52,28 @@ public class Day25 extends Day {
     @Override
     protected String part1(String fileContents) throws Exception {
         String[] numbers = fileContents.split(System.lineSeparator()); // when input file is multiline
-        return decimalToSnafu(Arrays.stream(numbers).mapToLong(Day25::snafuToDecimal).sum());
+        return decimalToSnafu(Arrays.stream(numbers).mapToLong(this::snafuToDecimal).sum());
     }
 
     @Override
     protected String part2(String fileContents) throws Exception {
-        String[] numbers = fileContents.split(System.lineSeparator()); // when input file is multiline
-
-        return String.valueOf(2);
+        return "<EMPTY>";
     }
 
-    private static String decimalToSnafu(long number) {
-
+    private String decimalToSnafu(long number) {
         long remainder = number;
-        StringBuilder snafu = new StringBuilder();
+        List<Long> factorPows = buildInitialFactorPows(number);
 
+        StringBuilder snafu = new StringBuilder();
+        int index = 0;
+        while (remainder != 0 || index < factorPows.size()) {
+            remainder = getRemainder(remainder, snafu, index, factorPows.get(index), remainder > 0 ? 1 : -1);
+            index++;
+        }
+        return snafu.toString();
+    }
+
+    private List<Long> buildInitialFactorPows(long number){
         long currentFactor = 1L;
         List<Long> factorPows = new ArrayList<>();
         while (true) {
@@ -79,45 +85,22 @@ public class Day25 extends Day {
             currentFactor *= SNAFU_BASE;
         }
         factorPows.add(0, currentFactor);
-
-        int index = 0;
-        while (true) {
-            if (remainder == 0) {
-                snafu.append(String.valueOf(SnafuDigit.ZERO.letter).repeat(Math.max(0, factorPows.size() - index)));
-                break;
-            }
-            Long factorToCheck = factorPows.get(index);
-
-            if (remainder > 0) {
-                // Positive -> substract
-                int currentDigit = 0;
-                while (Math.abs(remainder) >= factorToCheck / 2.0) {
-                    currentDigit++;
-                    remainder -= factorToCheck;
-                }
-
-                if (currentDigit > 0 || index > 0) {
-                    snafu.append(SnafuDigit.ofValue(currentDigit));
-                }
-            } else {
-                // Negative -> adding
-                int currentDigit = 0;
-                while (Math.abs(remainder) >= factorToCheck / 2.0) {
-                    currentDigit++;
-                    remainder += factorToCheck;
-                }
-
-                if (currentDigit > 0  || index > 0) {
-                    snafu.append(SnafuDigit.ofValue(currentDigit * -1));
-                }
-            }
-            index++;
-        }
-
-        return snafu.toString();
+        return factorPows;
     }
 
-    private static long snafuToDecimal(String snafu) {
+    private long getRemainder(long remainder, StringBuilder snafu, int index, Long factorToCheck, int sign) {
+        int currentDigit = 0;
+        while (Math.abs(remainder) >= factorToCheck / 2.0) {
+            currentDigit++;
+            remainder -= (factorToCheck * sign);
+        }
+        if (currentDigit > 0 || index > 0) {
+            snafu.append(SnafuDigit.ofValue(currentDigit * sign));
+        }
+        return remainder;
+    }
+
+    private long snafuToDecimal(String snafu) {
         String reverseSnafu = new StringBuilder(snafu).reverse().toString();
         long factor = 1L;
         long result = 0L;
@@ -132,14 +115,5 @@ public class Day25 extends Day {
 
     public static void main(String[] args) {
         Day.run(Day25::new, "2022/D25_small.txt", "2022/D25_full.txt");
-/*
-        for (int x = 0; x < 100; x++) {
-            String snafu = decimalToSnafu(x);
-            long decimal = snafuToDecimal(snafu);
-
-            System.out.printf("%-5d %-8s %-5d\n", x, snafu, decimal);
-        }
-
- */
     }
 }
