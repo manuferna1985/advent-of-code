@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Day2Test {
+class Day2Test {
 
   @Test
   void testSmallProblem() {
