@@ -1,6 +1,11 @@
 package es.ing.aoc.common;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class MatrixUtils {
 
@@ -54,6 +59,63 @@ public class MatrixUtils {
             System.out.println();
         }
         System.out.println("-------------------------------");
+    }
+
+    public static String[][] readMatrixFromFile(String fileContents) {
+        List<String> allLines = Arrays.asList(fileContents.split(System.lineSeparator())); // when input file is multiline
+        String[][] matrix = new String[allLines.size()][allLines.get(0).length()];
+
+        String line;
+        for (int i = 0; i < allLines.size(); i++) {
+            line = allLines.get(i);
+            for (int j = 0; j < line.length(); j++) {
+                matrix[i][j] = String.valueOf(line.charAt(j));
+            }
+        }
+
+        return matrix;
+    }
+
+    public static List<Pair<Point, String>> getNeighbours(String[][] matrix, int x, int y) {
+        List<org.apache.commons.lang3.tuple.Pair<Point, String>> neighbours = new ArrayList<>();
+
+        if (x > 0) {
+            if (y > 0) {
+                neighbours.add(buildPointWithValue(matrix, x - 1, y - 1));
+            }
+
+            neighbours.add(buildPointWithValue(matrix, x - 1, y));
+
+            if (y < matrix[0].length - 1) {
+                neighbours.add(buildPointWithValue(matrix, x - 1, y + 1));
+            }
+        }
+
+        if (x < matrix.length - 1) {
+            if (y > 0) {
+                neighbours.add(buildPointWithValue(matrix, x + 1, y - 1));
+            }
+
+            neighbours.add(buildPointWithValue(matrix, x + 1, y));
+
+            if (y < matrix[0].length - 1) {
+                neighbours.add(buildPointWithValue(matrix, x + 1, y + 1));
+            }
+        }
+
+        if (y > 0) {
+            neighbours.add(buildPointWithValue(matrix, x, y - 1));
+        }
+
+        if (y < matrix[0].length - 1) {
+            neighbours.add(buildPointWithValue(matrix, x, y + 1));
+        }
+
+        return neighbours;
+    }
+
+    private static Pair<Point, String> buildPointWithValue(String[][] matrix, int x, int y) {
+        return Pair.of(Point.of(x, y), matrix[x][y]);
     }
 
     public static void main(String[] args) {

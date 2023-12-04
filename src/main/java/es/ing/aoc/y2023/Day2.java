@@ -18,15 +18,15 @@ public class Day2 extends Day {
   protected String part1(String fileContents) throws Exception {
     return String.valueOf(buildGamesFromInput(fileContents).entrySet().stream()
         .filter(entry -> entry.getValue().stream().allMatch(this::matchIsWithinLimits))
-        .map(entry -> entry.getKey())
+        .map(Map.Entry::getKey)
         .mapToInt(Integer::valueOf)
         .sum());
   }
 
   @Override
   protected String part2(String fileContents) throws Exception {
-    return String.valueOf(buildGamesFromInput(fileContents).entrySet().stream()
-        .map(entry -> reduceMatches(entry.getValue()))
+    return String.valueOf(buildGamesFromInput(fileContents).values().stream()
+        .map(this::reduceMatches)
         .map(this::getMatchPower)
         .mapToLong(Long::valueOf)
         .sum());

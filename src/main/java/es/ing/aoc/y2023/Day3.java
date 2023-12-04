@@ -1,12 +1,11 @@
 package es.ing.aoc.y2023;
 
 import es.ing.aoc.common.Day;
+import es.ing.aoc.common.MatrixUtils;
 import es.ing.aoc.common.Point;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,7 +16,7 @@ public class Day3 extends Day {
   @Override
   protected String part1(String fileContents) throws Exception {
 
-    String[][] matrix = readMatrixFromFile(fileContents);
+    String[][] matrix = MatrixUtils.readMatrixFromFile(fileContents);
 
     Long sum = 0L;
 
@@ -26,7 +25,7 @@ public class Day3 extends Day {
 
         if (NumberUtils.isDigits(matrix[x][y])) {
           // Number detected
-          List<Pair<Point, String>> neighbours = this.getNeighbours(matrix, x, y);
+          List<Pair<Point, String>> neighbours = MatrixUtils.getNeighbours(matrix, x, y);
 
           if (neighbours.stream().map(Pair::getRight).anyMatch(this::isSymbol)) {
             sum += getPartNumberFromPosition(matrix, x, y, true).getValue();
@@ -41,7 +40,7 @@ public class Day3 extends Day {
   @Override
   protected String part2(String fileContents) throws Exception {
 
-    String[][] matrix = readMatrixFromFile(fileContents);
+    String[][] matrix = MatrixUtils.readMatrixFromFile(fileContents);
 
     Long sum = 0L;
 
@@ -50,7 +49,7 @@ public class Day3 extends Day {
 
         if (this.isSymbol(matrix[x][y])) {
           // Symbol detected
-          List<Pair<Point, String>> neighbours = this.getNeighbours(matrix, x, y);
+          List<Pair<Point, String>> neighbours = MatrixUtils.getNeighbours(matrix, x, y);
 
           List<Pair<Point, Long>> partNumbers = neighbours.stream()
               .filter(n -> NumberUtils.isDigits(n.getValue()))
@@ -67,63 +66,6 @@ public class Day3 extends Day {
 
 
     return String.valueOf(sum);
-  }
-
-  private String[][] readMatrixFromFile(String fileContents) {
-    List<String> allLines = Arrays.asList(fileContents.split(System.lineSeparator())); // when input file is multiline
-    String[][] matrix = new String[allLines.size()][allLines.get(0).length()];
-
-    String line;
-    for (int i = 0; i < allLines.size(); i++) {
-      line = allLines.get(i);
-      for (int j = 0; j < line.length(); j++) {
-        matrix[i][j] = String.valueOf(line.charAt(j));
-      }
-    }
-
-    return matrix;
-  }
-
-  private List<Pair<Point, String>> getNeighbours(String[][] matrix, int x, int y) {
-    List<Pair<Point, String>> neighbours = new ArrayList<>();
-
-    if (x > 0) {
-      if (y > 0) {
-        neighbours.add(buildPointWithValue(matrix, x - 1, y - 1));
-      }
-
-      neighbours.add(buildPointWithValue(matrix, x - 1, y));
-
-      if (y < matrix[0].length - 1) {
-        neighbours.add(buildPointWithValue(matrix, x - 1, y + 1));
-      }
-    }
-
-    if (x < matrix.length - 1) {
-      if (y > 0) {
-        neighbours.add(buildPointWithValue(matrix, x + 1, y - 1));
-      }
-
-      neighbours.add(buildPointWithValue(matrix, x + 1, y));
-
-      if (y < matrix[0].length - 1) {
-        neighbours.add(buildPointWithValue(matrix, x + 1, y + 1));
-      }
-    }
-
-    if (y > 0) {
-      neighbours.add(buildPointWithValue(matrix, x, y - 1));
-    }
-
-    if (y < matrix[0].length - 1) {
-      neighbours.add(buildPointWithValue(matrix, x, y + 1));
-    }
-
-    return neighbours;
-  }
-
-  private Pair<Point, String> buildPointWithValue(String[][] matrix, int x, int y) {
-    return Pair.of(Point.of(x, y), matrix[x][y]);
   }
 
   private Pair<Point, Long> getPartNumberFromPosition(String[][] matrix, int x, int y, boolean cleanMatrix) {
