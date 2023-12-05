@@ -114,11 +114,8 @@ public class Day5 extends Day {
         seedMaps.add(currentMap);
         currentMap = new ArrayList<>();
       } else {
-        List<Long> parts = Arrays.stream(lines[i].split(" ")).mapToLong(Long::parseLong)
-            .boxed()
-            .toList();
-
-        currentMap.add(new RangeMap(Range.between(parts.get(1), parts.get(1) + parts.get(2) - 1), parts.get(0)));
+        long[] parts = Arrays.stream(lines[i].split(" ")).mapToLong(Long::parseLong).toArray();
+        currentMap.add(new RangeMap(Range.between(parts[1], parts[1] + parts[2] - 1), parts[0]));
       }
     }
     seedMaps.add(currentMap);
