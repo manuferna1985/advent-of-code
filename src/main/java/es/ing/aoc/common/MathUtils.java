@@ -57,18 +57,13 @@ public class MathUtils {
     }
 
     public static BinaryOperator<Long> convertToFunction(String op) {
-        switch (op) {
-            case "+":
-                return (a, b) -> a + b;
-            case "-":
-                return (a, b) -> a - b;
-            case "*":
-                return (a, b) -> a * b;
-            case "/":
-                return (a, b) -> a / b;
-            default:
-                throw new RuntimeException("Wrong operation detected!");
-        }
+      return switch (op) {
+        case "+" -> (a, b) -> a + b;
+        case "-" -> (a, b) -> a - b;
+        case "*" -> (a, b) -> a * b;
+        case "/" -> (a, b) -> a / b;
+        default -> throw new RuntimeException("Wrong operation detected!");
+      };
     }
 
     public static <T> Optional<Long> binarySearch(Range<Long> rng, Function<Long, T> searchFunction, Predicate<T> resultValidator) {
@@ -94,5 +89,10 @@ public class MathUtils {
                 return binarySearch(Range.between(rng.getMinimum(), middleLimit), searchFunction, resultValidator);
             }
         }
+    }
+
+    public static  org.apache.commons.lang3.tuple.Pair<Double, Double> solveEquation2ndGrade(double a, double b, double c) {
+        double root = Math.sqrt(Math.pow(b, 2) - 4 * a * c);
+        return org.apache.commons.lang3.tuple.Pair.of((-b + root) / 2 * a, (-b - root) / 2 * a);
     }
 }
