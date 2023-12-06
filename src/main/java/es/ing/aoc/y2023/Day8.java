@@ -2,7 +2,7 @@ package es.ing.aoc.y2023;
 
 import es.ing.aoc.common.Day;
 
-public class Day0 extends Day {
+public class Day8 extends Day {
 
 
   @Override
@@ -25,6 +25,6 @@ public class Day0 extends Day {
 
 
   public static void main(String[] args) {
-    Day.run(Day0::new, "2023/D1_small.txt", "2023/D1_full.txt");
+    Day.run(Day8::new, "2023/D8_small.txt", "2023/D8_full.txt");
   }
 }

@@ -9,8 +9,7 @@ import java.util.List;
 
 public class Day5 extends Day {
 
-  record RangeMap(Range<Long> sourceRange, Long destRangeStart) {
-  }
+  record RangeMap(Range<Long> sourceRange, Long destRangeStart) {}
 
   @Override
   protected String part1(String fileContents) throws Exception {
@@ -30,11 +29,8 @@ public class Day5 extends Day {
       }
     }
 
-    return String.valueOf(
-        Arrays.stream(seeds)
-            .min().orElse(0));
+    return String.valueOf(Arrays.stream(seeds).min().orElse(0));
   }
-
 
   @Override
   protected String part2(String fileContents) throws Exception {
@@ -44,7 +40,6 @@ public class Day5 extends Day {
     List<List<RangeMap>> seedMaps = buildSeedMaps(lines);
 
     for (List<RangeMap> terrain : seedMaps) {
-
       List<Range<Long>> newSeeds = new ArrayList<>();
 
       for (Range<Long> seed : seeds) {
@@ -52,7 +47,6 @@ public class Day5 extends Day {
         List<Range<Long>> transformed = new ArrayList<>();
 
         for (RangeMap tr : terrain) {
-
           List<Range<Long>> newRemaining = new ArrayList<>();
           for (Range<Long> sr : remaining) {
 
@@ -80,11 +74,7 @@ public class Day5 extends Day {
       seeds = newSeeds;
     }
 
-    return String.valueOf(
-        seeds.stream()
-            .map(Range::getMinimum)
-            .mapToLong(Long::longValue)
-            .min().orElse(0));
+    return String.valueOf(seeds.stream().map(Range::getMinimum).mapToLong(Long::longValue).min().orElse(0));
   }
 
   private List<Range<Long>> getSeedInRanges(String[] lines) {
