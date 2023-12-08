@@ -3,6 +3,7 @@ package es.ing.aoc.y2023;
 import es.ing.aoc.common.Day;
 import es.ing.aoc.common.MathUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -16,24 +17,6 @@ public class Day8 extends Day {
 
   enum Direction {
     LEFT, RIGHT;
-
-    public static Direction of(char letter) {
-      for (Direction c : Direction.values()) {
-        if (c.name().charAt(0)==letter) {
-          return c;
-        }
-      }
-      throw new RuntimeException("Direction not found!!!");
-    }
-  }
-
-  record Path(List<Direction> directions) {
-  }
-
-  record Decision(String left, String right) {
-    String go(Direction dir) {
-      return LEFT.equals(dir) ? left:right;
-    }
   }
 
   @Override
@@ -50,12 +33,12 @@ public class Day8 extends Day {
 
     String[] lines = fileContents.split(System.lineSeparator());
 
-    Path path = new Path(lines[0].chars().mapToObj(i -> Direction.of((char) i)).toList());
-    Map<String, Decision> decisions = new HashMap<>();
+    List<Direction> path = lines[0].chars().mapToObj(c -> (c=='L') ? LEFT:Direction.RIGHT).toList();
+    Map<String, Pair<String, String>> decisions = new HashMap<>();
 
     for (int i = 2; i < lines.length; i++) {
       List<String> parts = Arrays.stream(lines[i].split("[ =(,)]")).filter(StringUtils::isNotEmpty).toList();
-      decisions.put(parts.get(0), new Decision(parts.get(1), parts.get(2)));
+      decisions.put(parts.get(0), Pair.of(parts.get(1), parts.get(2)));
     }
 
     return decisions.keySet().stream()
@@ -64,15 +47,15 @@ public class Day8 extends Day {
         .reduce(MathUtils::mcm).orElse(0L);
   }
 
-  private long getStepsToReachDestination(Path path, String start, Map<String, Decision> decisions, Predicate<String> condition) {
+  private long getStepsToReachDestination(List<Direction> path, String start, Map<String, Pair<String, String>> decisions, Predicate<String> condition) {
 
     boolean end = false;
     long steps = 0;
 
     String current = start;
     while (!end) {
-      Direction dir = path.directions.get((int) (steps % path.directions.size()));
-      current = decisions.get(current).go(dir);
+      Direction dir = path.get((int) (steps % path.size()));
+      current = LEFT.equals(dir) ? decisions.get(current).getLeft():decisions.get(current).getRight();
       steps++;
 
       if (condition.test(current)) {
@@ -82,7 +65,6 @@ public class Day8 extends Day {
 
     return steps;
   }
-
 
   public static void main(String[] args) {
     Day.run(Day8::new, "2023/D8_small.txt", "2023/D8_full.txt");
