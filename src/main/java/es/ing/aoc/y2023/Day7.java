@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static es.ing.aoc.y2023.Day7.HandType.*;
 import static java.util.stream.Collectors.groupingBy;
 
 public class Day7 extends Day {
@@ -50,16 +49,6 @@ public class Day7 extends Day {
     }
   }
 
-  enum HandType {
-    FIVE_OF_A_KIND(7), FOUR_OF_A_KIND(6), FULL_HOUSE(5), THREE_OF_A_KIND(4), TWO_PAIR(3), ONE_PAIR(2), HIGH_CARD(1);
-
-    private final int value;
-
-    HandType(int value) {
-      this.value = value;
-    }
-  }
-
   static class Hand implements Comparable<Hand> {
 
     public final List<Card> cards;
@@ -74,18 +63,14 @@ public class Day7 extends Day {
 
     @Override
     public int compareTo(Hand that) {
-
-      HandType myType = this.getHandType();
-      HandType yourType = that.getHandType();
-
-      if (myType.equals(yourType)) {
+      int typeComp = this.getHandType().compareTo(that.getHandType());
+      if (typeComp==0) {
         return this.handValue.compareTo(that.handValue);
-      } else {
-        return Integer.compare(myType.value, yourType.value);
       }
+      return typeComp;
     }
 
-    public HandType getHandType() {
+    public String getHandType() {
       Map<Card, List<Card>> groups = cards.stream().collect(groupingBy(c -> c));
 
       if (groups.containsKey(Card.X) && groups.size() > 1) {
@@ -95,17 +80,10 @@ public class Day7 extends Day {
             .ifPresent(card -> groups.get(card).addAll(jokers));
       }
 
-      if (groups.size()==1) {
-        return FIVE_OF_A_KIND;
-      } else if (groups.size()==2) {
-        return groups.values().stream().anyMatch(cs -> cs.size()==4) ? FOUR_OF_A_KIND:FULL_HOUSE;
-      } else if (groups.size()==3) {
-        return groups.values().stream().anyMatch(cs -> cs.size()==3) ? THREE_OF_A_KIND:TWO_PAIR;
-      } else if (groups.size()==4) {
-        return ONE_PAIR;
-      } else {
-        return HIGH_CARD;
-      }
+      return StringUtils.rightPad(
+          groups.values().stream().map(List::size).sorted(Comparator.reverseOrder()).map(String::valueOf)
+              .collect(Collectors.joining(StringUtils.EMPTY)),
+          5, "0");
     }
 
     public String toString() {
