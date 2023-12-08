@@ -95,4 +95,26 @@ public class MathUtils {
         double root = Math.sqrt(Math.pow(b, 2) - 4 * a * c);
         return org.apache.commons.lang3.tuple.Pair.of((-b + root) / 2 * a, (-b - root) / 2 * a);
     }
+
+    public static long mcd(long n1, long n2) {
+        long mcd = 0;
+        long max = Math.max(n1, n2);
+        long min = Math.min(n1, n2);
+
+        do {
+            mcd = min;
+            min = max % min;
+            max = mcd;
+        } while (min!=0);
+
+        return mcd;
+    }
+
+    public static long mcm(long n1, long n2) {
+        long mcm = 0;
+        long max = Math.max(n1, n2);
+        long min = Math.min(n1, n2);
+        mcm = (max / mcd(max, min)) * min;
+        return mcm;
+    }
 }
