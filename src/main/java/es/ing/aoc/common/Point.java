@@ -45,6 +45,10 @@ public class Point {
         return new Point(x, y);
     }
 
+    public static Point of(String[] coords){
+        return new Point(coords);
+    }
+
     public String toString() {
         return String.format("[%d,%d,%d]", x, y, z);
     }

@@ -1,9 +1,10 @@
 #!/bin/bash
 
-DAY="$1"
+YEAR="$1"
+DAY="$2"
 
-touch 2023/D${DAY}_small.txt
-touch 2023/D${DAY}_full.txt
+touch "${YEAR}/D${DAY}_small.txt"
+touch "${YEAR}/D${DAY}_full.txt"
 
-git add 2023/D${DAY}_small.txt
-git add 2023/D${DAY}_full.txt
+git add "${YEAR}/D${DAY}_small.txt"
+git add "${YEAR}/D${DAY}_full.txt"

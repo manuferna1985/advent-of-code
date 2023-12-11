@@ -1,0 +1,12 @@
+turn on 489,959 through 759,964
+turn off 820,516 through 871,914
+turn off 427,423 through 929,502
+turn off 384,670 through 674,972
+turn off 249,41 through 270,936
+turn on 614,742 through 769,780
+turn on 427,70 through 575,441
+turn on 410,478 through 985,753
+turn off 619,46 through 931,342
+turn on 284,55 through 768,922
+turn off 40,592 through 728,685
+toggle 171,31 through 688,88
