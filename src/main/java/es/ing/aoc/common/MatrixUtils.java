@@ -6,6 +6,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 public class MatrixUtils {
 
@@ -40,6 +41,16 @@ public class MatrixUtils {
     for (int i = 0; i < matrix.length; i++) {
       for (int j = 0; j < matrix[i].length; j++) {
         result[j][i] = matrix[i][j];
+      }
+    }
+    return result;
+  }
+
+  public static <R, T> T[][] transformMatrix(Class<T> type, R[][] matrix, Function<R, T> fn) {
+    T[][] result = (T[][]) Array.newInstance(type, matrix.length, matrix[0].length);
+    for (int i = 0; i < matrix.length; i++) {
+      for (int j = 0; j < matrix[i].length; j++) {
+        result[i][j] = fn.apply(matrix[i][j]);
       }
     }
     return result;

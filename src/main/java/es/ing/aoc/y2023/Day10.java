@@ -66,7 +66,7 @@ public class Day10 extends Day {
   protected String part1(String fileContents) throws Exception {
 
     String[][] matrix = MatrixUtils.readMatrixFromFile(fileContents);
-    Pipe[][] ground = transformMatrix(matrix);
+    Pipe[][] ground = MatrixUtils.transformMatrix(Pipe.class, matrix, Pipe::of);
     Point s = this.findStart(ground);
     List<Point> validNeighbours = getValidNeighbours(matrix, ground, s);
 
@@ -94,7 +94,7 @@ public class Day10 extends Day {
       System.arraycopy(matrixOrig[x], 0, matrix[x + 1], 1, matrixOrig[x].length);
     }
 
-    Pipe[][] ground = transformMatrix(matrix);
+    Pipe[][] ground = MatrixUtils.transformMatrix(Pipe.class, matrix, Pipe::of);
     Point s = this.findStart(ground);
 
     Set<Point> path = new HashSet<>();
@@ -214,16 +214,6 @@ public class Day10 extends Day {
     throw new RuntimeException("S not found in map!");
   }
 
-  private Pipe[][] transformMatrix(String[][] matrix) {
-    Pipe[][] result = new Pipe[matrix.length][matrix[0].length];
-    for (int i = 0; i < matrix.length; i++) {
-      for (int j = 0; j < matrix[i].length; j++) {
-        result[i][j] = Pipe.of(matrix[i][j]);
-      }
-    }
-    return result;
-  }
-
   private Pipe getRealStart(List<Point> validNeighbours, Pipe[][] ground, Point s) {
     Point n1 = validNeighbours.get(0);
     Pipe n1Pipe = ground[n1.x][n1.y];
@@ -246,7 +236,6 @@ public class Day10 extends Day {
       }
     }
   }
-
 
   private Integer calculateSteps(String[][] matrix, Pipe[][] ground, Point start) {
 
