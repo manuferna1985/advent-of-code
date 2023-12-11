@@ -35,6 +35,16 @@ public class MatrixUtils {
     copy(result, matrix, offset);
   }
 
+  public static <T> T[][] transposeMatrix(Class<T> type, T[][] matrix) {
+    T[][] result = (T[][]) Array.newInstance(type, matrix[0].length, matrix.length);
+    for (int i = 0; i < matrix.length; i++) {
+      for (int j = 0; j < matrix[i].length; j++) {
+        result[j][i] = matrix[i][j];
+      }
+    }
+    return result;
+  }
+
   public static <T> void copy(T[][] origin, T[][] destination, Point offset) {
     for (int i = 0; i < origin.length; i++) {
       System.arraycopy(origin[i], 0, destination[i + offset.x], offset.y, origin.length);
