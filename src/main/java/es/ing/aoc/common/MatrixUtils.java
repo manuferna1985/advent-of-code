@@ -56,6 +56,18 @@ public class MatrixUtils {
     return result;
   }
 
+  public static <T> T[][] readMatrixFromFile(String fileContents, Class<T> type, Function<String, T> fn) {
+    String[] lines = fileContents.split(System.lineSeparator());
+    T[][] result = (T[][]) Array.newInstance(type, lines.length, lines[0].length());
+
+    for (int i = 0; i < lines.length; i++) {
+      for (int j = 0; j < lines[i].length(); j++) {
+        result[i][j] = fn.apply(String.valueOf(lines[i].charAt(j)));
+      }
+    }
+    return result;
+  }
+
   public static <T> void copy(T[][] origin, T[][] destination, Point offset) {
     for (int i = 0; i < origin.length; i++) {
       System.arraycopy(origin[i], 0, destination[i + offset.x], offset.y, origin.length);
