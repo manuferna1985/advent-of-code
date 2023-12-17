@@ -109,12 +109,12 @@ public class MatrixUtils {
     return matrix;
   }
 
-  public static List<Pair<Point, String>> getNeighbours(String[][] matrix, int x, int y) {
+  public static <T> List<Pair<Point, T>> getNeighbours(T[][] matrix, int x, int y) {
     return getNeighbours(matrix, x, y, true);
   }
 
-  public static List<Pair<Point, String>> getNeighbours(String[][] matrix, int x, int y, boolean diagonalsAllowed) {
-    List<org.apache.commons.lang3.tuple.Pair<Point, String>> neighbours = new ArrayList<>();
+  public static <T> List<Pair<Point, T>> getNeighbours(T[][] matrix, int x, int y, boolean diagonalsAllowed) {
+    List<org.apache.commons.lang3.tuple.Pair<Point, T>> neighbours = new ArrayList<>();
 
     if (x > 0) {
       if (y > 0 && diagonalsAllowed) {
@@ -151,7 +151,7 @@ public class MatrixUtils {
     return neighbours;
   }
 
-  private static Pair<Point, String> buildPointWithValue(String[][] matrix, int x, int y) {
+  private static <T> Pair<Point, T> buildPointWithValue(T[][] matrix, int x, int y) {
     return Pair.of(Point.of(x, y), matrix[x][y]);
   }
 
