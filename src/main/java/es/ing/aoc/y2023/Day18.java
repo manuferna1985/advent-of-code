@@ -2,15 +2,14 @@ package es.ing.aoc.y2023;
 
 import es.ing.aoc.common.Day;
 import es.ing.aoc.common.Point;
-import org.apache.commons.lang3.Range;
+import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.function.BiFunction;
 
 public class Day18 extends Day {
-
-  record Segment(Point p1, Point p2) {
-  }
 
   @Override
   protected String part1(String fileContents) throws Exception {
@@ -19,100 +18,97 @@ public class Day18 extends Day {
 
   @Override
   protected String part2(String fileContents) throws Exception {
-    return String.valueOf(getDiggedPoints(fileContents, this::getNormalPoint));
+    return String.valueOf(getDiggedPoints(fileContents, this::getHexPoint));
   }
 
-  private int getDiggedPoints(String fileContents, BiFunction<String, Point, Point> fn) {
+  private double getDiggedPoints(String fileContents, BiFunction<String, Point, Pair<Point, Integer>> fn) {
     String[] lines = fileContents.split(System.lineSeparator());
 
     Point min = Point.of(Integer.MAX_VALUE, Integer.MAX_VALUE);
     Point max = Point.of(Integer.MIN_VALUE, Integer.MIN_VALUE);
     Point s1 = Point.of(0, 0);
 
-    Point[] edges = new Point[lines.length];
-    int i=0;
+    List<Point> polygon = new ArrayList<>();
+
     for (String line : lines) {
-      Point s2 = fn.apply(line, s1);
-      edges[i++] = s2;
+      Pair<Point, Integer> nextData = fn.apply(line, s1);
+      Point s2 = nextData.getLeft();
+      polygon.add(s2);
       max = Point.max(max, s2);
       min = Point.min(min, s2);
       s1 = s2;
     }
+    // (int(area-0.5*edge+1)+edge)
+    //return shoelaceArea(polygon) + (perimeter / 2.0) + 1;
 
-    int digged = 0;
-    for (int x = min.x; x <= max.x; x++) {
-      System.out.println(x);
-      for (int y = min.y; y <= max.y; y++) {
-        if (pointInPoligon(x, y, edges) || pointInsidePoligon(x, y, edges)) {
-          digged++;
-        }
-      }
-    }
+    polygon.add(polygon.get(0));
 
-    return digged;
+    return area(polygon) / 2 + 1;
   }
 
-  private Point getNormalPoint(String line, Point prev) {
+  private Pair<Point, Integer> getNormalPoint(String line, Point prev) {
     String[] parts = line.split(" ");
     int len = Integer.parseInt(parts[1]);
-
-    Point s2 = switch (parts[0].charAt(0)) {
-      case 'R' -> Point.of(prev.x, prev.y + len);
-      case 'D' -> Point.of(prev.x + len, prev.y);
-      case 'L' -> Point.of(prev.x, prev.y - len);
-      case 'U' -> Point.of(prev.x - len, prev.y);
-      default -> throw new IllegalStateException("Unexpected value: " + parts[0].charAt(0));
-    };
-    return s2;
+    return Pair.of(getNextPoint(prev, parts[0].charAt(0), len), len);
   }
 
-  private Point getHexPoint(String line, Point prev) {
+  private Pair<Point, Integer> getHexPoint(String line, Point prev) {
     String[] parts = line.split(" ");
     int len = HexFormat.fromHexDigits(parts[2].substring(2, parts[2].length() - 2));
+    return Pair.of(getNextPoint(prev, parts[2].charAt(parts[2].length() - 2), len), len);
+  }
 
-    Point s2 = switch (parts[2].charAt(parts[2].length() - 2)) {
-      case '0' -> Point.of(prev.x, prev.y + len);
-      case '1' -> Point.of(prev.x + len, prev.y);
-      case '2' -> Point.of(prev.x, prev.y - len);
-      case '3' -> Point.of(prev.x - len, prev.y);
-      default -> throw new IllegalStateException("Unexpected value: " + parts[0].charAt(0));
+  private static Point getNextPoint(Point prev, char dir, int len) {
+    //System.out.printf("%s - %d\n", dir, len);
+
+    return switch (dir) {
+      case '0', 'R' -> Point.of(prev.x, prev.y + len);
+      case '1', 'D' -> Point.of(prev.x + len, prev.y);
+      case '2', 'L' -> Point.of(prev.x, prev.y - len);
+      case '3', 'U' -> Point.of(prev.x - len, prev.y);
+      default -> throw new IllegalStateException("Unexpected value: " + dir);
     };
-    return s2;
   }
 
-  private boolean pointInPoligon(int x, int y, Point[] edges) {
-
-    for (int i = 0, j=1; i < edges.length; i++) {
-      if (edges[i].x == x && edges[j].x == x && Range.between(edges[i].y, edges[j].y).contains(y)){
-        return true;
-      }
-      if (edges[i].y == y && edges[j].y == y && Range.between(edges[i].x, edges[j].x).contains(x)){
-        return true;
-      }
-
-      j = (j + 1) % edges.length;
+  // Shoelace formula, found it on the internet:
+  // https://rosettacode.org/wiki/Shoelace_formula_for_polygonal_area#Java#
+  private double shoelaceArea(Point[] v) {
+    int n = v.length;
+    double a = 0.0;
+    for (int i = 0; i < n - 1; i++) {
+      a += v[i].x * v[i + 1].y - v[i + 1].x * v[i].y;
     }
-    return false;
+    return Math.abs(a + v[n - 1].x * v[0].y - v[0].x * v[n - 1].y) / 2.0;
   }
 
-  private boolean pointInsidePoligon(int x, int y, Point[] edges) {
-    int i = 0;
-    int j = edges.length - 1;
-    boolean ok = false;
+  private long area(List<Point> v) {
+    long result = 0L;
 
-    for (i = 0; i < edges.length; i++) {
-      if ((edges[i].y < y && edges[j].y >= y) || (edges[j].y < y && edges[i].y >= y)) {
-        if (edges[i].x + (y - edges[i].y) / (edges[j].y - edges[i].y) * (edges[j].x - edges[i].x) < x) {
-          ok = !ok;
-        }
-      }
-      j = i;
+    int i = v.size() - 1;
+    for (; i > 0; i--) {
+      Point p1 = v.get(i - 1);
+      Point p2 = v.get(i);
+
+      System.out.printf("%d %d %d\n", i, p2.x, p2.y);
+      System.out.printf("%d %d %d\n", i - 1, p1.x, p1.y);
+
+      long a = (long) p2.y * (long) p1.x;
+      long b = (long) p2.x * (long) p1.y;
+      long c = Math.abs(p2.x - p1.x);
+      long d = Math.abs(p2.y - p1.y);
+
+      long e = c + d;
+      e += (b - a);
+
+      System.out.printf("----------------------- %d\n", e);
+
+      result += e;
     }
+    return result;
 
-    return ok;
   }
 
   public static void main(String[] args) {
-    Day.run(Day18::new, "2023/D18_small.txt", "2023/D18_full.txt");
+    Day.run(Day18::new, "2023/D18_small.txt");//, "2023/D18_full.txt");
   }
 }
