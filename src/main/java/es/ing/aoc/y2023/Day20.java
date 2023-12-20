@@ -70,16 +70,6 @@ public class Day20 extends Day {
       this.status = ON.equals(this.status) ? OFF:ON;
       return ON.equals(this.status) ? HIGH:LOW;
     }
-
-    public String status() {
-      if (FLIP_FLOP.equals(this.type)) {
-        return ON.equals(this.status) ? "1":"0";
-      } else if (CONJUNCTION.equals(this.type)) {
-        return this.memory.values().stream().allMatch(HIGH::equals) ? "1":"0";
-      } else {
-        return ".";
-      }
-    }
   }
 
   record WatchModule(String moduleName, AtomicLong repPattern) {
@@ -117,6 +107,74 @@ public class Day20 extends Day {
   }
 
   private PulseCounter getPulses(String fileContents, Long maxIterations) {
+
+    Map<String, Module> modules = buildModules(fileContents);
+    PulseCounter counter = new PulseCounter();
+
+    long i = 0L;
+    boolean end = false;
+
+    if (maxIterations==null) {
+      counter.watched.addAll(searchModulesToWatch(modules));
+    }
+
+    while (!end) {
+      sendSignal(i, modules.get(BUTTON.value), modules, LOW, counter);
+      processAllSignals(modules, i, counter);
+      i++;
+
+      if (maxIterations!=null){
+        if (i==maxIterations) {
+          end = true;
+        }
+      } else {
+        if (counter.watched.stream().allMatch(w -> w.repPattern.get()!=0L)) {
+          long mcm = counter.watched.stream().mapToLong(w -> w.repPattern.get()).reduce(1L, MathUtils::mcm);
+          counter.it.set(mcm);
+          end = true;
+        }
+      }
+    }
+    return counter;
+  }
+
+  private void processAllSignals(Map<String, Module> modules, long i, PulseCounter counter) {
+    boolean pulsesSent = true;
+    while (pulsesSent) {
+      pulsesSent = false;
+      for (Module m : modules.values()) {
+        if (!m.pendingSignals.isEmpty()) {
+
+          Pair<String, Signal> lastSignal = m.pendingSignals.remove(0);
+
+          switch (m.type) {
+            case BROADCASTER:
+              sendSignal(i, m, modules, LOW, counter);
+              pulsesSent = true;
+              break;
+            case FLIP_FLOP:
+              if (LOW.equals(lastSignal.getRight())) {
+                sendSignal(i, m, modules, m.flip(), counter);
+                pulsesSent = true;
+              }
+              break;
+            case CONJUNCTION:
+              // Conjunction
+              m.memory.put(lastSignal.getLeft(), lastSignal.getRight());
+              if (m.memory.values().stream().allMatch(HIGH::equals)) {
+                sendSignal(i, m, modules, LOW, counter);
+              } else {
+                sendSignal(i, m, modules, HIGH, counter);
+              }
+              pulsesSent = true;
+              break;
+          }
+        }
+      }
+    }
+  }
+
+  private Map<String, Module> buildModules(String fileContents){
     String[] lines = fileContents.split(System.lineSeparator());
 
     Map<String, Module> modules = new HashMap<>();
@@ -127,72 +185,13 @@ public class Day20 extends Day {
       List<String> desModules = Arrays.stream(parts[1].split(",")).map(String::trim).toList();
       modules.put(name, new Module(name, type, desModules));
     }
-
     initConjMemories(modules);
 
-    PulseCounter counter = new PulseCounter();
     Module bc = modules.get(BROADCASTER.value);
     Module button = new Module(BUTTON.value, BUTTON, List.of(bc.name));
     modules.put(BUTTON.value, button);
 
-    long i = 0L;
-    boolean maxItReached = false;
-
-    if (maxIterations==null) {
-      counter.watched.addAll(searchModulesToWatch(modules));
-    }
-
-    while (!maxItReached) {
-      sendSignal(i, button, modules, LOW, counter);
-
-      boolean pulsesSent = true;
-      while (pulsesSent) {
-        pulsesSent = false;
-        for (Module m : modules.values()) {
-          if (!m.pendingSignals.isEmpty()) {
-
-            Pair<String, Signal> lastSignal = m.pendingSignals.remove(0);
-
-            switch (m.type) {
-              case BROADCASTER:
-                sendSignal(i, m, modules, LOW, counter);
-                pulsesSent = true;
-                break;
-              case FLIP_FLOP:
-                if (LOW.equals(lastSignal.getRight())) {
-                  sendSignal(i, m, modules, m.flip(), counter);
-                  pulsesSent = true;
-                }
-                break;
-              case CONJUNCTION:
-                // Conjunction
-                m.memory.put(lastSignal.getLeft(), lastSignal.getRight());
-                if (m.memory.values().stream().allMatch(HIGH::equals)) {
-                  sendSignal(i, m, modules, LOW, counter);
-                } else {
-                  sendSignal(i, m, modules, HIGH, counter);
-                }
-                pulsesSent = true;
-                break;
-            }
-          }
-        }
-      }
-      i++;
-
-      if (maxIterations!=null){
-        if (i==maxIterations) {
-          maxItReached = true;
-        }
-      } else {
-        if (counter.watched.stream().allMatch(w -> w.repPattern.get()!=0L)) {
-          long mcm = counter.watched.stream().mapToLong(w -> w.repPattern.get()).reduce(1L, MathUtils::mcm);
-          counter.it.set(mcm);
-          maxItReached = true;
-        }
-      }
-    }
-    return counter;
+    return modules;
   }
 
   private List<WatchModule> searchModulesToWatch(Map<String, Module> modules) {
