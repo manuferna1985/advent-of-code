@@ -23,7 +23,7 @@ public class Day17 extends Day {
   protected String part1(String fileContents) throws Exception {
     Integer[][] map = MatrixUtils.readMatrixFromFile(fileContents, Integer.class, Integer::parseInt);
     Map<CustomNode, List<CustomNode>> nodes = buildGraphForNormalCrucible(map);
-    CustomNode origin = new CustomNode(Point.of(0, 0), S, 0, 0); // S/E
+    CustomNode origin = new CustomNode(Point.of(0, 0), E, 1, 0); // S/E
 
     CustomGraph graph = new CustomGraph(nodes);
     graph.algorithm(origin);
@@ -36,7 +36,7 @@ public class Day17 extends Day {
   protected String part2(String fileContents) throws Exception {
     Integer[][] map = MatrixUtils.readMatrixFromFile(fileContents, Integer.class, Integer::parseInt);
     Map<CustomNode, List<CustomNode>> nodes = buildGraphForUltraCrucible(map);
-    CustomNode origin = new CustomNode(Point.of(0, 0), S, 1, 0); // S/E
+    CustomNode origin = new CustomNode(Point.of(0, 0), E, 1, 0); // S/E
 
     CustomGraph graph = new CustomGraph(nodes);
     graph.algorithm(origin);
@@ -146,6 +146,6 @@ public class Day17 extends Day {
   }
 
   public static void main(String[] args) {
-    Day.run(Day17::new, "2023/D17_full.txt"); //, "2023/D17_full.txt");
+    Day.run(Day17::new, "2023/D17_small.txt"); //, "2023/D17_full.txt");
   }
 }

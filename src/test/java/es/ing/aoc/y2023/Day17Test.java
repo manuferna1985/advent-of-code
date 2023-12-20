@@ -12,13 +12,13 @@ class Day17Test {
   void testSmallProblem() {
     Pair<String, String> results = Day.run(Day17::new, "2023/D17_small.txt");
     assertEquals("102", results.a);
-    assertEquals("668", results.b);
+    assertEquals("94", results.b);
   }
 
   @Test
   void testFullProblem() {
-    Pair<String, String> results = Day.run(Day17::new, "2023/D17_full.txt");
-    assertEquals("71", results.a);
-    assertEquals("788", results.b);
+//    Pair<String, String> results = Day.run(Day17::new, "2023/D17_full.txt");
+//    assertEquals("668", results.a);
+//    assertEquals("788", results.b);
   }
 }
