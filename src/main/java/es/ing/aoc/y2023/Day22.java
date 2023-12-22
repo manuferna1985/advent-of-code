@@ -13,6 +13,8 @@ import java.util.Set;
 
 public class Day22 extends Day {
 
+  private List<Stick> sticks;
+
   static class Stick {
 
     private final String name;
@@ -41,22 +43,6 @@ public class Day22 extends Day {
 
     public Stick(Stick other) {
       this(other.name, other.left, other.right);
-    }
-
-    public Point getLeft() {
-      return left;
-    }
-
-    public Point getRight() {
-      return right;
-    }
-
-    public List<Point> getAllPoints() {
-      return allPoints;
-    }
-
-    public String getName() {
-      return name;
     }
 
     @Override
@@ -91,7 +77,7 @@ public class Day22 extends Day {
     public boolean isStickSupportedByMe(Stick me, Stick other) {
       Stick futureOther = new Stick(other);
       futureOther.fall();
-      return me.getAllPoints().stream().anyMatch(futureOther.allPoints::contains);
+      return me.allPoints.stream().anyMatch(futureOther.allPoints::contains);
     }
 
     public int chainReaction(List<Stick> allSticks, Set<Stick> fallen) {
@@ -114,15 +100,13 @@ public class Day22 extends Day {
   @Override
   protected String part1(String fileContents) throws Exception {
 
-    List<Stick> sticks = buildSticks(fileContents);
-    System.out.println("[begin]: algorithm");
-    fallingAlgorithm(sticks);
-    System.out.println("[end]: algorithm");
+    if (sticks==null) {
+      sticks = buildSticks(fileContents);
+      fallingAlgorithm(sticks);
+    }
 
-    System.out.println("[begin]: disintegration");
     List<Stick> sticksToDisintegrate = sticks.stream()
         .filter(s -> s.findSticksImOnlySupporting(sticks).isEmpty()).toList();
-    System.out.println("[end]: disintegration");
 
     return String.valueOf(sticksToDisintegrate.size());
   }
@@ -130,32 +114,30 @@ public class Day22 extends Day {
   @Override
   protected String part2(String fileContents) throws Exception {
 
-    List<Stick> sticks = buildSticks(fileContents);
-    System.out.println("[begin]: algorithm");
-    fallingAlgorithm(sticks);
-    System.out.println("[end]: algorithm");
+    if (sticks==null) {
+      sticks = buildSticks(fileContents);
+      fallingAlgorithm(sticks);
+    }
 
-    System.out.println("[begin]: chainReaction");
     Map<Stick, Integer> fallenCount = new HashMap<>();
     for (Stick s : sticks) {
       int c = s.chainReaction(sticks, new HashSet<>()) - 1;
       fallenCount.put(s, c);
     }
-    System.out.println("[end]: chainReaction");
 
     return String.valueOf(fallenCount.values().stream().mapToInt(Integer::valueOf).sum());
   }
 
   private List<Stick> buildSticks(String fileContents) {
     String[] lines = fileContents.split(System.lineSeparator());
-    List<Stick> sticks = new ArrayList<>();
+    List<Stick> sticksList = new ArrayList<>();
     int index = 1;
     for (String line : lines) {
       String[] parts = line.split("~");
-      sticks.add(new Stick(String.valueOf(index++), Point.of(parts[0].split(",")), Point.of(parts[1].split(","))));
+      sticksList.add(new Stick(String.valueOf(index++), Point.of(parts[0].split(",")), Point.of(parts[1].split(","))));
     }
 
-    return sticks;
+    return sticksList;
   }
 
   private void fallingAlgorithm(List<Stick> sticks) {
@@ -180,7 +162,7 @@ public class Day22 extends Day {
   }
 
   private boolean isNotOverlapping(Stick s1, Stick s2, List<Stick> allSticks) {
-    return allSticks.stream().filter(other -> !s1.equals(other)).flatMap(s -> s.getAllPoints().stream()).noneMatch(s2.allPoints::contains);
+    return allSticks.stream().filter(other -> !s1.equals(other)).flatMap(s -> s.allPoints.stream()).noneMatch(s2.allPoints::contains);
   }
 
   public static void main(String[] args) {
