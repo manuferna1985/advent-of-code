@@ -49,6 +49,10 @@ public class Point {
     return new Point(coords);
   }
 
+  public static Point of(Point other){
+    return new Point(other.x, other.y, other.z);
+  }
+
   public String toString() {
     return String.format("[%d,%d,%d]", x, y, z);
   }
