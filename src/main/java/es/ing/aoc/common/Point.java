@@ -30,10 +30,10 @@ public class Point {
   }
 
   public Point(String[] strPoint) {
-    this.x = Integer.parseInt(strPoint[0]);
-    this.y = Integer.parseInt(strPoint[1]);
+    this.x = Integer.parseInt(strPoint[0].trim());
+    this.y = Integer.parseInt(strPoint[1].trim());
     if (strPoint.length > 2) {
-      this.z = Integer.parseInt(strPoint[2]);
+      this.z = Integer.parseInt(strPoint[2].trim());
     }
   }
 
