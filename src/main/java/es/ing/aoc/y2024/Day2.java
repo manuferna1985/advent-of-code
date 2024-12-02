@@ -19,7 +19,7 @@ public class Day2 extends Day {
     return String.valueOf(counter);
   }
 
-  private static boolean checkReportRules(int[] numbers) {
+  private boolean checkReportRules(int[] numbers) {
     boolean increasing = numbers[0] < numbers[1];
     boolean isValid = true;
 
@@ -45,7 +45,7 @@ public class Day2 extends Day {
       if (checkReportRules(numbers)) {
         counter++;
       } else {
-        if (generateCombinations(numbers).stream().anyMatch(Day2::checkReportRules)){
+        if (generateCombinations(numbers).stream().anyMatch(this::checkReportRules)){
           counter++;
         }
       }
@@ -53,7 +53,7 @@ public class Day2 extends Day {
     return String.valueOf(counter);
   }
 
-  private static boolean between(int n, int lower, int upper) {
+  private boolean between(int n, int lower, int upper) {
     return n >= lower && n <= upper;
   }
 
