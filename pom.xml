@@ -16,6 +16,13 @@
     </properties>
 
     <dependencies>
+        <!-- https://github.com/dpaukov/combinatoricslib3 -->
+        <dependency>
+            <groupId>com.github.dpaukov</groupId>
+            <artifactId>combinatoricslib3</artifactId>
+            <version>3.4.0</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/commons-codec/commons-codec -->
         <dependency>
             <groupId>commons-codec</groupId>
