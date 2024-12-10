@@ -6,9 +6,7 @@ import es.ing.aoc.common.Point;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -25,7 +23,7 @@ public class Day10 extends Day {
     return getScore(fileContents, true);
   }
 
-  private String getScore(String fileContents, boolean allowRepeatedPaths){
+  private String getScore(String fileContents, boolean allowRepeatedPaths) {
     Integer[][] map = MatrixUtils.readMatrixFromFile(fileContents, Integer.class, Integer::parseInt);
     return String.valueOf(
         searchGroundPoints(map).parallelStream()
@@ -34,7 +32,7 @@ public class Day10 extends Day {
             .sum());
   }
 
-  private List<Pair<Point, Integer>> searchGroundPoints(Integer[][] map){
+  private List<Pair<Point, Integer>> searchGroundPoints(Integer[][] map) {
     List<Pair<Point, Integer>> grounds = new ArrayList<>();
     for (int i = 0; i < map.length; i++) {
       for (int j = 0; j < map[i].length; j++) {
@@ -51,29 +49,23 @@ public class Day10 extends Day {
     List<Pair<Point, Integer>> survivors = new ArrayList<>();
     survivors.add(p);
 
-    final Map<Point, Collection<Point>> peaks = new HashMap<>();
+    final Map<Point, Integer> peaks = new HashMap<>();
     final List<Pair<Point, Integer>> next = new Vector<>();
 
     while (!survivors.isEmpty()) {
 
       survivors.parallelStream().forEach(p1 -> {
         if (p1.getValue() < 9) {
-          List<Pair<Point, Integer>> neighbours = MatrixUtils.getNeighbours(map, p1.getKey().x, p1.getKey().y, false)
+          MatrixUtils.getNeighbours(map, p1.getKey().x, p1.getKey().y, false)
               .stream()
               .filter(p2 -> p2.getValue()==p1.getValue() + 1)
-              .toList();
-
-          if (!neighbours.isEmpty()) {
-            next.addAll(neighbours);
-          }
+              .forEach(next::add);
         } else {
           synchronized (peaks) {
-            if (peaks.containsKey(p1.getKey())) {
-              peaks.get(p1.getKey()).add(p1.getKey());
+            if (peaks.containsKey(p1.getKey()) && allowRepeatedPaths) {
+              peaks.put(p1.getKey(), peaks.get(p1.getKey()) + 1);
             } else {
-              Collection<Point> endSet = allowRepeatedPaths ? new ArrayList<>() : new HashSet<>();
-              endSet.add(p1.getKey());
-              peaks.put(p1.getKey(), endSet);
+              peaks.put(p1.getKey(), 1);
             }
           }
         }
@@ -84,7 +76,7 @@ public class Day10 extends Day {
       next.clear();
     }
 
-    return peaks.values().stream().mapToInt(Collection::size).sum();
+    return peaks.values().stream().mapToInt(Integer::intValue).sum();
   }
 
   public static void main(String[] args) {
