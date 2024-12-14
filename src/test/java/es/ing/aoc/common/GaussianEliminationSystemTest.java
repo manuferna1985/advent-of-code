@@ -1,16 +1,19 @@
 package es.ing.aoc.common;
 
+import es.ing.aoc.common.gaussian.GaussianEliminationSystem;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-class GaussianEliminationSystemTest {
+public abstract class GaussianEliminationSystemTest {
+
+  abstract GaussianEliminationSystem getGaussianAlgorithm();
 
   @Test
   void testGaussianSolver1eq() {
     Double equations2[][] = {{5.0, 20.0}};
-    BigDecimal[] solutions = GaussianEliminationSystem.applyAlgorithm(MatrixUtils.transformMatrix(BigDecimal.class, equations2, BigDecimal::new));
+    BigDecimal[] solutions = getGaussianAlgorithm().applyAlgorithm(MatrixUtils.transformMatrix(BigDecimal.class, equations2, BigDecimal::new));
     Assertions.assertEquals(4.0, solutions[0].doubleValue());
   }
 
@@ -22,7 +25,7 @@ class GaussianEliminationSystemTest {
         {-4.0, 15.0, 6.0, 105.0},
         {27.0, -8.0, -59.0, -372.0}};
 
-    BigDecimal[] solutions = GaussianEliminationSystem.applyAlgorithm(MatrixUtils.transformMatrix(BigDecimal.class, equations2, BigDecimal::new));
+    BigDecimal[] solutions = getGaussianAlgorithm().applyAlgorithm(MatrixUtils.transformMatrix(BigDecimal.class, equations2, BigDecimal::new));
 
     Assertions.assertEquals(3.0, solutions[0].doubleValue());
     Assertions.assertEquals(5.0, solutions[1].doubleValue());
@@ -39,7 +42,7 @@ class GaussianEliminationSystemTest {
         {1.0, 1.0, 1.0, 1.0, 1.0, 23.0},
         {6.0, 4.0, 1.0, -6.0, 6.0, -4.0}};
 
-    BigDecimal[] solutions = GaussianEliminationSystem.applyAlgorithm(MatrixUtils.transformMatrix(BigDecimal.class, equations2, BigDecimal::new));
+    BigDecimal[] solutions = getGaussianAlgorithm().applyAlgorithm(MatrixUtils.transformMatrix(BigDecimal.class, equations2, BigDecimal::new));
 
     Assertions.assertEquals(4.0, solutions[0].doubleValue());
     Assertions.assertEquals(6.0, solutions[1].doubleValue());

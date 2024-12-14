@@ -1,7 +1,7 @@
 package es.ing.aoc.y2024;
 
 import es.ing.aoc.common.Day;
-import es.ing.aoc.common.GaussianEliminationSystem;
+import es.ing.aoc.common.gaussian.GaussianEliminationSystemImpl1;
 import org.apache.commons.math3.util.Pair;
 
 import java.math.BigDecimal;
@@ -44,7 +44,7 @@ public class Day13 extends Day {
     BigInteger total = BigInteger.ZERO;
     for (Machine m : machines) {
       BigDecimal[][] matrix = {{m.a.getFirst(), m.b.getFirst(), m.price.getFirst()}, {m.a.getSecond(), m.b.getSecond(), m.price.getSecond()}};
-      BigDecimal[] solution = GaussianEliminationSystem.applyAlgorithm(matrix);
+      BigDecimal[] solution = new GaussianEliminationSystemImpl1().applyAlgorithm(matrix);
 
       if (isValidSolution(solution, applyPriceTransformation)) {
         total = total.add(getSolutionCost(solution));
