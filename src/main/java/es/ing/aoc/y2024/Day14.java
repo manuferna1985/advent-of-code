@@ -3,9 +3,10 @@ package es.ing.aoc.y2024;
 import es.ing.aoc.common.Day;
 import es.ing.aoc.common.Point;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 public class Day14 extends Day {
@@ -30,16 +31,9 @@ public class Day14 extends Day {
 
   @Override
   protected String part1(String fileContents) throws Exception {
-    String[] lines = fileContents.split(System.lineSeparator());
-
-    final int maxWidth = lines.length > 15 ? 101:11;
-    final int maxHeight = lines.length > 15 ? 103:7;
-
-    List<Robot> robots = new ArrayList<>();
-
-    for (String line : lines) {
-      robots.add(Robot.of(line));
-    }
+    final List<Robot> robots = readRobots(fileContents);
+    final int maxWidth = getMaxWidth(robots);
+    final int maxHeight = getMaxHeight(robots);
 
     for (int i = 0; i < 100; i++) {
       for (Robot r : robots) {
@@ -47,27 +41,69 @@ public class Day14 extends Day {
       }
     }
 
+    return String.valueOf(
+        getCuadrantsPredicates(maxWidth, maxHeight).stream()
+            .map(pred -> robots.stream().filter(pred).count())
+            .mapToLong(Long::longValue)
+            .reduce(1, (a, b) -> a * b));
+  }
+
+  private static List<Predicate<Robot>> getCuadrantsPredicates(int maxWidth, int maxHeight) {
     int midWidth = maxWidth / 2;
     int midHeight = maxHeight / 2;
-
-    Predicate<Robot> first = (robot -> robot.pos.x < midWidth && robot.pos.y < midHeight);
-    Predicate<Robot> second = (robot -> robot.pos.x > midWidth && robot.pos.y < midHeight);
-    Predicate<Robot> third = (robot -> robot.pos.x < midWidth && robot.pos.y > midHeight);
-    Predicate<Robot> fourth = (robot -> robot.pos.x > midWidth && robot.pos.y > midHeight);
-
-    long count1 = robots.stream().filter(first).count();
-    long count2 = robots.stream().filter(second).count();
-    long count3 = robots.stream().filter(third).count();
-    long count4 = robots.stream().filter(fourth).count();
-
-    return String.valueOf(count1 * count2 * count3 * count4);
+    return List.of(
+        (robot -> robot.pos.x < midWidth && robot.pos.y < midHeight),
+        (robot -> robot.pos.x > midWidth && robot.pos.y < midHeight),
+        (robot -> robot.pos.x < midWidth && robot.pos.y > midHeight),
+        (robot -> robot.pos.x > midWidth && robot.pos.y > midHeight));
   }
 
   @Override
   protected String part2(String fileContents) throws Exception {
-    String[] lines = fileContents.split(System.lineSeparator());
+    final List<Robot> robots = readRobots(fileContents);
+    final int maxWidth = getMaxWidth(robots);
+    final int maxHeight = getMaxHeight(robots);
 
-    return "";
+    int seconds = 0;
+    while (true) {
+      Map<Point, Integer> map = new HashMap<>();
+      // We move all robots, counting how many are in each position after they have moved
+      for (Robot r : robots) {
+        r.move(maxWidth, maxHeight);
+        map.put(r.pos, map.containsKey(r.pos) ? map.get(r.pos) + 1:1);
+      }
+      // If there's just one robot in each map position (no one is sharing the same position)
+      if (map.values().stream().allMatch(n -> n==1)) {
+        printRobots(robots, maxWidth, maxHeight);
+        seconds++;
+        break;
+      }
+      seconds++;
+    }
+
+    return String.valueOf(seconds);
+  }
+
+  private static int getMaxHeight(List<Robot> robots) {
+    return robots.size() > 15 ? 103:7;
+  }
+
+  private static int getMaxWidth(List<Robot> robots) {
+    return robots.size() > 15 ? 101:11;
+  }
+
+  private void printRobots(List<Robot> robots, int maxWidth, int maxHeight) {
+    List<Point> positions = robots.stream().map(r -> r.pos).toList();
+    for (int h = 0; h < maxHeight; h++) {
+      for (int w = 0; w < maxWidth; w++) {
+        System.out.print(positions.contains(Point.of(w, h)) ? "X":".");
+      }
+      System.out.println();
+    }
+  }
+
+  private List<Robot> readRobots(String fileContents) {
+    return Arrays.stream(fileContents.split(System.lineSeparator())).map(Robot::of).toList();
   }
 
   public static void main(String[] args) {
