@@ -23,20 +23,31 @@ public class Day15 extends Day {
   private static final String EMPTY = ".";
 
   public enum Direction {
-    UP("^"),
-    DOWN("v"),
-    RIGHT(">"),
-    LEFT("<");
+    UP("^", "w"),
+    DOWN("v", "s"),
+    RIGHT(">", "d"),
+    LEFT("<", "a");
 
     private final String directionCode;
+    private final String directionArrow;
 
-    Direction(String code) {
+    Direction(String code, String arrow) {
       this.directionCode = code;
+      this.directionArrow = arrow;
     }
 
     public static Direction of(String letter) {
       for (Direction dir : Direction.values()) {
         if (dir.directionCode.equalsIgnoreCase(letter)) {
+          return dir;
+        }
+      }
+      throw new IllegalArgumentException();
+    }
+
+    public static Direction fromArrow(String letter) {
+      for (Direction dir : Direction.values()) {
+        if (dir.directionArrow.equalsIgnoreCase(letter)) {
           return dir;
         }
       }
@@ -87,6 +98,41 @@ public class Day15 extends Day {
     return String.valueOf(getBoxesCoordinates(map));
   }
 
+  @Override
+  protected String part2(String fileContents) throws Exception {
+    String[] input = fileContents.split(System.lineSeparator() + System.lineSeparator());
+    String expandedMap = input[0]
+        .replace(WALL, WALL + WALL)
+        .replace(BOX, BIG_BOX)
+        .replace(EMPTY, EMPTY + EMPTY)
+        .replace(ROBOT, ROBOT + EMPTY);
+
+    String[][] map = MatrixUtils.readMatrixFromFile(expandedMap);
+    List<Direction> orders = Arrays.stream(input[1].replaceAll(System.lineSeparator(), "").split("")).map(Direction::of).toList();
+
+    Point r1 = findRobotPosition(map);
+
+    //BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
+    //while(true){
+    for (Direction dir : orders){
+      //printMap(map, r1);
+      //Direction dir = Direction.fromArrow(keyboard.readLine().substring(0,1));
+      //System.out.println(dir);
+      Point r2 = dir.move(r1);
+      //Thread.sleep(100);
+
+      if (EMPTY.equals(map[r2.x][r2.y])) {
+        r1 = r2;
+      } else if (BIG_BOX_LEFT.equals(map[r2.x][r2.y])) {
+        r1 = canBigBoxBePushed(map, Pair.of(r2, RIGHT.move(r2)), dir, true) ? r2:r1;
+      } else if (BIG_BOX_RIGHT.equals(map[r2.x][r2.y])) {
+        r1 = canBigBoxBePushed(map, Pair.of(LEFT.move(r2), r2), dir, true) ? r2:r1;
+      }
+    }
+    printMap(map, r1);
+    return String.valueOf(getBoxesCoordinates(map));
+  }
+
   private boolean canBoxBePushed(String[][] map, Point r2, Direction dir) {
     final Point r3 = dir.move(r2);
 
@@ -134,14 +180,18 @@ public class Day15 extends Day {
           boxesToMove.add(r3);
         } else {
           // boxes not aligned vertically
-          boxesToMove.add(LEFT.move(r3));
-          boxesToMove.add(RIGHT.move(r3));
+          if (checkMap(map, r3.getRight(), BIG_BOX_LEFT)){
+            boxesToMove.add(RIGHT.move(r3));
+          }
+          if (checkMap(map, r3.getLeft(), BIG_BOX_RIGHT)){
+            boxesToMove.add(LEFT.move(r3));
+          }
         }
 
         moved = boxesToMove.stream().allMatch(box -> canBigBoxBePushed(map, box, dir, false));
 
         if (moved) {
-          boxesToMove.stream().forEach(box -> canBigBoxBePushed(map, box, dir, true));
+          boxesToMove.forEach(box -> canBigBoxBePushed(map, box, dir, true));
         }
       }
     }
@@ -213,37 +263,9 @@ public class Day15 extends Day {
     }
   }
 
-  @Override
-  protected String part2(String fileContents) throws Exception {
-    String[] input = fileContents.split(System.lineSeparator() + System.lineSeparator());
-    String expandedMap = input[0]
-        .replace(WALL, WALL + WALL)
-        .replace(BOX, BIG_BOX)
-        .replace(EMPTY, EMPTY + EMPTY)
-        .replace(ROBOT, ROBOT + EMPTY);
-
-    String[][] map = MatrixUtils.readMatrixFromFile(expandedMap);
-    List<Direction> orders = Arrays.stream(input[1].replaceAll(System.lineSeparator(), "").split("")).map(Direction::of).toList();
-
-    Point r1 = findRobotPosition(map);
-
-    for (Direction dir : orders) {
-      printMap(map, r1);
-      System.out.println(dir);
-      Point r2 = dir.move(r1);
-      if (EMPTY.equals(map[r2.x][r2.y])) {
-        r1 = r2;
-      } else if (BIG_BOX_LEFT.equals(map[r2.x][r2.y])) {
-        r1 = canBigBoxBePushed(map, Pair.of(r2, RIGHT.move(r2)), dir, true) ? r2:r1;
-      } else if (BIG_BOX_RIGHT.equals(map[r2.x][r2.y])) {
-        r1 = canBigBoxBePushed(map, Pair.of(LEFT.move(r2), r2), dir, true) ? r2:r1;
-      }
-    }
-    printMap(map, r1);
-    return String.valueOf(getBoxesCoordinates(map));
-  }
-
   public static void main(String[] args) {
     Day.run(Day15::new, "2024/D15_small.txt", "2024/D15_full.txt");
+    // 1490942 too low!
+    // 1519402 too high!
   }
 }
