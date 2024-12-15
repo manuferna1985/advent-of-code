@@ -162,14 +162,23 @@ public class Day15 extends Day {
     boolean moved = false;
 
     if (dir.isHorizontal() && checkAnyMap(map, r3, EMPTY)) {
+      // .[]. -> ..[]
+      // .[]. -> []..
       moved = true;
     } else if (dir.isVertical() && checkBothMap(map, r3, EMPTY)) {
+      // ..  or  []
+      // []      ..
       moved = true;
     } else if (checkAnyMap(map, r3, WALL)) {
+      // .[]#  #[].
+      //     or
+      //  []    #.
+      //  .#    []
       moved = false;
     } else {
 
       if (dir.isHorizontal()) {
+        // [][]: call recursive to check whether the other box can be pushed
         final Pair<Point, Point> r4 = Pair.of(dir.move(r3.getLeft()), dir.move(r3.getRight()));
         moved = canBigBoxBePushed(map, r4, dir, true);
       } else {
@@ -177,12 +186,21 @@ public class Day15 extends Day {
         List<Pair<Point, Point>> boxesToMove = new ArrayList<>();
         if (checkMap(map, r3.getLeft(), map[r2.getLeft().x][r2.getLeft().y])) {
           // boxes are aligned vertically
+          //        []
+          // []  or []
+          // []
           boxesToMove.add(r3);
         } else {
           // boxes not aligned vertically
+          //         []
+          // []  or []
+          //  []
           if (checkMap(map, r3.getRight(), BIG_BOX_LEFT)){
             boxesToMove.add(RIGHT.move(r3));
           }
+          //         []
+          //  []  or  []
+          // []
           if (checkMap(map, r3.getLeft(), BIG_BOX_RIGHT)){
             boxesToMove.add(LEFT.move(r3));
           }
@@ -267,5 +285,6 @@ public class Day15 extends Day {
     Day.run(Day15::new, "2024/D15_small.txt", "2024/D15_full.txt");
     // 1490942 too low!
     // 1519402 too high!
+    // 1505172 wrong answer!
   }
 }
