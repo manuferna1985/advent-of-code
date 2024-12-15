@@ -23,31 +23,20 @@ public class Day15 extends Day {
   private static final String EMPTY = ".";
 
   public enum Direction {
-    UP("^", "w"),
-    DOWN("v", "s"),
-    RIGHT(">", "d"),
-    LEFT("<", "a");
+    UP("^"),
+    DOWN("v"),
+    RIGHT(">"),
+    LEFT("<");
 
     private final String directionCode;
-    private final String directionArrow;
 
-    Direction(String code, String arrow) {
+    Direction(String code) {
       this.directionCode = code;
-      this.directionArrow = arrow;
     }
 
     public static Direction of(String letter) {
       for (Direction dir : Direction.values()) {
         if (dir.directionCode.equalsIgnoreCase(letter)) {
-          return dir;
-        }
-      }
-      throw new IllegalArgumentException();
-    }
-
-    public static Direction fromArrow(String letter) {
-      for (Direction dir : Direction.values()) {
-        if (dir.directionArrow.equalsIgnoreCase(letter)) {
           return dir;
         }
       }
@@ -111,25 +100,18 @@ public class Day15 extends Day {
     List<Direction> orders = Arrays.stream(input[1].replaceAll(System.lineSeparator(), "").split("")).map(Direction::of).toList();
 
     Point r1 = findRobotPosition(map);
-
-    //BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
-    //while(true){
-    for (Direction dir : orders){
+    for (Direction dir : orders) {
       //printMap(map, r1);
-      //Direction dir = Direction.fromArrow(keyboard.readLine().substring(0,1));
-      //System.out.println(dir);
       Point r2 = dir.move(r1);
-      //Thread.sleep(100);
-
       if (EMPTY.equals(map[r2.x][r2.y])) {
         r1 = r2;
       } else if (BIG_BOX_LEFT.equals(map[r2.x][r2.y])) {
-        r1 = canBigBoxBePushed(map, Pair.of(r2, RIGHT.move(r2)), dir, true) ? r2:r1;
+        r1 = canBigBoxBePushed(map, Pair.of(r2, RIGHT.move(r2)), dir) ? r2:r1;
       } else if (BIG_BOX_RIGHT.equals(map[r2.x][r2.y])) {
-        r1 = canBigBoxBePushed(map, Pair.of(LEFT.move(r2), r2), dir, true) ? r2:r1;
+        r1 = canBigBoxBePushed(map, Pair.of(LEFT.move(r2), r2), dir) ? r2:r1;
       }
     }
-    printMap(map, r1);
+    //printMap(map, r1);
     return String.valueOf(getBoxesCoordinates(map));
   }
 
@@ -152,72 +134,58 @@ public class Day15 extends Day {
     return moved;
   }
 
-  private boolean canBigBoxBePushed(String[][] map, Pair<Point, Point> r2, Direction dir, boolean postMove) {
+  private boolean canBigBoxBePushed(String[][] map, Pair<Point, Point> r2, Direction dir) {
+    List<Pair<Point, Point>> moving = new ArrayList<>();
+    boolean canMove = canBigBoxBePushed(map, r2, dir, moving);
+    if (canMove) {
+      for (Pair<Point, Point> box : moving) {
+        this.clearBigBox(map, box);
+      }
+      for (Pair<Point, Point> box : moving) {
+        this.moveBigBox(map, dir.move(box));
+      }
+    }
+    return canMove;
+  }
+
+  private boolean canBigBoxBePushed(String[][] map, Pair<Point, Point> r2, Direction dir, List<Pair<Point, Point>> moving) {
     final Pair<Point, Point> r3 = Pair.of(dir.move(r2.getLeft()), dir.move(r2.getRight()));
+    moving.add(r2);
 
     if (!isPointWithinMapLimits(map, r3.getLeft()) || !isPointWithinMapLimits(map, r2.getRight())) {
       return false;
     }
-
-    boolean moved = false;
-
     if (dir.isHorizontal() && checkAnyMap(map, r3, EMPTY)) {
-      // .[]. -> ..[]
-      // .[]. -> []..
-      moved = true;
-    } else if (dir.isVertical() && checkBothMap(map, r3, EMPTY)) {
-      // ..  or  []
-      // []      ..
-      moved = true;
-    } else if (checkAnyMap(map, r3, WALL)) {
-      // .[]#  #[].
-      //     or
-      //  []    #.
-      //  .#    []
-      moved = false;
+      return true;
+    }
+    if (dir.isVertical() && checkBothMap(map, r3, EMPTY)) {
+      return true;
+    }
+    if (checkAnyMap(map, r3, WALL)) {
+      return false;
+    }
+
+    if (dir.isHorizontal()) {
+      // [][]: call recursive to check whether the other box can be pushed
+      final Pair<Point, Point> r4 = Pair.of(dir.move(r3.getLeft()), dir.move(r3.getRight()));
+      return canBigBoxBePushed(map, r4, dir, moving);
     } else {
 
-      if (dir.isHorizontal()) {
-        // [][]: call recursive to check whether the other box can be pushed
-        final Pair<Point, Point> r4 = Pair.of(dir.move(r3.getLeft()), dir.move(r3.getRight()));
-        moved = canBigBoxBePushed(map, r4, dir, true);
+      List<Pair<Point, Point>> boxesToMove = new ArrayList<>();
+      if (checkMap(map, r3.getLeft(), map[r2.getLeft().x][r2.getLeft().y])) {
+        // boxes are aligned vertically
+        boxesToMove.add(r3);
       } else {
-
-        List<Pair<Point, Point>> boxesToMove = new ArrayList<>();
-        if (checkMap(map, r3.getLeft(), map[r2.getLeft().x][r2.getLeft().y])) {
-          // boxes are aligned vertically
-          //        []
-          // []  or []
-          // []
-          boxesToMove.add(r3);
-        } else {
-          // boxes not aligned vertically
-          //         []
-          // []  or []
-          //  []
-          if (checkMap(map, r3.getRight(), BIG_BOX_LEFT)){
-            boxesToMove.add(RIGHT.move(r3));
-          }
-          //         []
-          //  []  or  []
-          // []
-          if (checkMap(map, r3.getLeft(), BIG_BOX_RIGHT)){
-            boxesToMove.add(LEFT.move(r3));
-          }
+        // boxes not aligned vertically
+        if (checkMap(map, r3.getRight(), BIG_BOX_LEFT)) {
+          boxesToMove.add(RIGHT.move(r3));
         }
-
-        moved = boxesToMove.stream().allMatch(box -> canBigBoxBePushed(map, box, dir, false));
-
-        if (moved) {
-          boxesToMove.forEach(box -> canBigBoxBePushed(map, box, dir, true));
+        if (checkMap(map, r3.getLeft(), BIG_BOX_RIGHT)) {
+          boxesToMove.add(LEFT.move(r3));
         }
       }
+      return boxesToMove.stream().allMatch(box -> canBigBoxBePushed(map, box, dir, moving));
     }
-
-    if (moved && postMove) {
-      moveBigBox(map, r2, r3);
-    }
-    return moved;
   }
 
   private void moveBox(String[][] map, Point p1, Point p2) {
@@ -225,11 +193,14 @@ public class Day15 extends Day {
     map[p2.x][p2.y] = BOX;
   }
 
-  private void moveBigBox(String[][] map, Pair<Point, Point> p1, Pair<Point, Point> p2) {
-    map[p1.getLeft().x][p1.getLeft().y] = EMPTY;
-    map[p1.getRight().x][p1.getRight().y] = EMPTY;
-    map[p2.getLeft().x][p2.getLeft().y] = BIG_BOX_LEFT;
-    map[p2.getRight().x][p2.getRight().y] = BIG_BOX_RIGHT;
+  private void clearBigBox(String[][] map, Pair<Point, Point> p) {
+    map[p.getLeft().x][p.getLeft().y] = EMPTY;
+    map[p.getRight().x][p.getRight().y] = EMPTY;
+  }
+
+  private void moveBigBox(String[][] map, Pair<Point, Point> p) {
+    map[p.getLeft().x][p.getLeft().y] = BIG_BOX_LEFT;
+    map[p.getRight().x][p.getRight().y] = BIG_BOX_RIGHT;
   }
 
   private boolean checkBothMap(String[][] map, Pair<Point, Point> p, String check) {
@@ -283,8 +254,5 @@ public class Day15 extends Day {
 
   public static void main(String[] args) {
     Day.run(Day15::new, "2024/D15_small.txt", "2024/D15_full.txt");
-    // 1490942 too low!
-    // 1519402 too high!
-    // 1505172 wrong answer!
   }
 }

@@ -11,14 +11,14 @@ class Day15Test {
   @Test
   void testSmallProblem() {
     Pair<String, String> results = Day.run(Day15::new, "2024/D15_small.txt");
-    assertEquals("", results.a);
-    assertEquals("", results.b);
+    assertEquals("10092", results.a);
+    assertEquals("9021", results.b);
   }
 
   @Test
   void testFullProblem() {
     Pair<String, String> results = Day.run(Day15::new, "2024/D15_full.txt");
-    assertEquals("", results.a);
-    assertEquals("", results.b);
+    assertEquals("1490942", results.a);
+    assertEquals("1519202", results.b);
   }
 }
