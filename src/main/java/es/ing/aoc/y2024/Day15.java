@@ -111,7 +111,7 @@ public class Day15 extends Day {
         r1 = canBigBoxBePushed(map, Pair.of(LEFT.move(r2), r2), dir) ? r2:r1;
       }
     }
-    //printMap(map, r1);
+    printMap(map, r1);
     return String.valueOf(getBoxesCoordinates(map));
   }
 
