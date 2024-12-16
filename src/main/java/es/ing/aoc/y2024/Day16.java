@@ -3,9 +3,14 @@ package es.ing.aoc.y2024;
 import es.ing.aoc.common.Day;
 import es.ing.aoc.common.MatrixUtils;
 import es.ing.aoc.common.Point;
+import es.ing.aoc.common.dijkstra.GenericGraph;
+import es.ing.aoc.common.dijkstra.GenericNode;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Day16 extends Day {
@@ -39,7 +44,12 @@ public class Day16 extends Day {
     }
 
     Direction turnAntiClockwise() {
-      return turnClockwise().turnClockwise().turnClockwise();
+      return switch (this) {
+        case N -> W;
+        case S -> E;
+        case W -> S;
+        case E -> N;
+      };
     }
   }
 
@@ -47,74 +57,47 @@ public class Day16 extends Day {
   protected String part1(String fileContents) throws Exception {
     String[][] maze = MatrixUtils.readMatrixFromFile(fileContents);
 
-    Pair<Point, Direction> p1 = Pair.of(find(maze, START), Direction.E);
+    Pair<Point, Direction> start = Pair.of(find(maze, START), Direction.E);
     Point exit = find(maze, END);
 
-    return String.valueOf(numberOfStepsForExitMaze(maze, p1, exit));
-  }
+    Map<Pair<Point, Direction>, List<GenericNode<Pair<Point, Direction>>>> edges = new HashMap<>();
 
-  private int numberOfStepsForExitMaze(String[][] maze, Pair<Point, Direction> player, Point exit) {
-    Map<Point, Integer> path = new HashMap<>();
-    path.put(player.getKey(), 0);
-    return numberOfStepsForExitMaze(maze, player, exit, path, Integer.MAX_VALUE, 0);
-  }
-
-  private int numberOfStepsForExitMaze(String[][] maze,
-                                       Pair<Point, Direction> player,
-                                       Point exit,
-                                       Map<Point, Integer> path,
-                                       int best,
-                                       int steps) {
-
-    if (exit.equals(player.getKey())) {
-      System.out.println(steps);
-      return steps;
-    }
-
-    if (steps >= best){
-      return Integer.MAX_VALUE;
-    }
-
-    Map<Pair<Point, Direction>, Integer> allowedMovements = new HashMap<>();
-
-    // Straight movement
-    Point nextInARow = player.getValue().move(player.getKey());
-    if (isEmpty(maze, nextInARow)) {
-      allowedMovements.put(Pair.of(nextInARow, player.getValue()), 1);
-    }
-    // Allowed turns
-    Direction dirCw = player.getValue().turnClockwise();
-    Point nextCw = dirCw.move(player.getKey());
-    if (isEmpty(maze, nextCw)) {
-      allowedMovements.put(Pair.of(nextCw, dirCw), 1001);
-    }
-
-    Direction dirAcw = player.getValue().turnAntiClockwise();
-    Point nextACw = dirAcw.move(player.getKey());
-    if (isEmpty(maze, nextACw)) {
-      allowedMovements.put(Pair.of(nextACw, dirAcw), 1001);
-    }
-
-    if (allowedMovements.isEmpty()) {
-      return Integer.MAX_VALUE;
-    }
-
-    int minLen = Integer.MAX_VALUE;
-    for (var mov : allowedMovements.entrySet()) {
-      if (!path.containsKey(mov.getKey().getKey())) {
-        path.put(mov.getKey().getKey(), mov.getValue());
-        int len = numberOfStepsForExitMaze(maze, mov.getKey(), exit, path, best, steps + mov.getValue());
-        best = len == Integer.MAX_VALUE ? best : len;
-        path.remove(mov.getKey().getKey());
-        minLen = Math.min(minLen, len);
+    for (int x=0; x < maze.length; x++){
+      for (int y=0; y < maze[x].length; y++){
+        Point p1 = Point.of(x, y);
+        for (Direction d : Direction.values()){
+          var key = Pair.of(p1, d);
+          if (!edges.containsKey(key)) {
+            edges.put(key, new ArrayList<>());
+          }
+          Point p2 = d.move(p1);
+          if (EMPTY.equals(maze[p1.x][p1.y]) && EMPTY.equals(maze[p2.x][p2.y])){
+            addNewEdge(edges, Pair.of(p1, d), Pair.of(p2, d), 1);
+            addNewEdge(edges, Pair.of(p1, d.turnClockwise()), Pair.of(p2, d), 1001);
+            addNewEdge(edges, Pair.of(p1, d.turnAntiClockwise()), Pair.of(p2, d), 1001);
+          }
+        }
       }
     }
+    GenericGraph<Pair<Point, Direction>> graph = new GenericGraph<>(edges);
+    graph.algorithm(start);
 
-    return minLen;
+    return String.valueOf(Arrays.stream(Direction.values())
+        .map(d -> Pair.of(exit, d))
+        .map(p -> graph.getDistances().get(p))
+        .mapToInt(Integer::intValue)
+        .min()
+        .orElse(Integer.MAX_VALUE));
   }
 
-  private boolean isEmpty(String[][] maze, Point p) {
-    return EMPTY.equals(maze[p.x][p.y]);
+  private <T> void addNewEdge(Map<T, List<GenericNode<T>>> edges, T a, T b, int cost){
+    if (edges.containsKey(a)){
+      edges.get(a).add(new GenericNode<>(b, cost));
+    } else {
+      List<GenericNode<T>> nodes = new ArrayList<>();
+      nodes.add(new GenericNode<>(b, cost));
+      edges.put(a, nodes);
+    }
   }
 
   private Point find(String[][] maze, String character) {
@@ -137,6 +120,6 @@ public class Day16 extends Day {
   }
 
   public static void main(String[] args) {
-    Day.run(Day16::new, "2024/D16_small.txt", "2024/D16_full.txt");
+    Day.run(Day16::new, "2024/D16_small.txt");//, "2024/D16_full.txt");
   }
 }
