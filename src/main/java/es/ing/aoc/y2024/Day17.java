@@ -35,6 +35,17 @@ public class Day17 extends Day {
         .map(Integer::parseInt)
         .toList();
 
+    // After analyzing the output numbers and how they change with each A increase, it follows the next pattern:
+    // Digit 0:  changes each 1 iteration     : 2^(0*3)
+    // Digit 2:  changes each 2^6 iterations  : 2^(1*6)
+    // Digit 3:  changes each 2^9 iterations  : 2^(1*9)
+    // Digit 4:  changes each 2^12 iterations : 2^(1*12)
+    // ....
+    // Digit 15: changes each 2^45 iterations : 2^(1*45)
+
+    // So, the 'findMatching' function it just move adding these 2 multiples and checking if the digit which has been changed
+    // it is now matching with the expected program output.
+
     return String.valueOf(findMatching(program, memory, 0, program.size() - 1, 0));
   }
 
