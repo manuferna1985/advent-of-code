@@ -35,16 +35,17 @@ public class Day17 extends Day {
         .map(Integer::parseInt)
         .toList();
 
-    long a = 0;
-
     // Set initial magic number
     findMatching(program, memory, 0, program.size() - 1, 0);
-
 
     return "";
   }
 
   private boolean findMatching(List<Integer> program, long[] memory, long a, int matchingGroup, int tab) {
+
+    if (matchingGroup < 0){
+      return true;
+    }
 
     for (int i = 0; i < 8; i++) {
       List<Integer> results = executeCode(program, memory, a);
@@ -56,6 +57,8 @@ public class Day17 extends Day {
         boolean match = findMatching(program, memory, a, matchingGroup - 1, tab + 1);
         if (!match) {
           a += (long) Math.pow(2, matchingGroup * 3.0);
+        } else {
+          return true;
         }
       }
     }
@@ -88,15 +91,16 @@ public class Day17 extends Day {
     for (int i = 0; i < program.size(); ) {
       Integer opCode = program.get(i);
       Integer literalOp = program.get(i + 1);
+      long comboOp = memory[literalOp];
 
       boolean jump = false;
       switch (opCode) {
         // 0: adv (division, result to A)
-        case 0 -> memory[A] = (long) (memory[A] / Math.pow(2, memory[literalOp]));
+        case 0 -> memory[A] = (long) (memory[A] / Math.pow(2, comboOp));
         // 1: bxl (bitwise XOR)
         case 1 -> memory[B] = memory[B] ^ literalOp;
         // 2: bst (modulo 8)
-        case 2 -> memory[B] = memory[literalOp] % 8;
+        case 2 -> memory[B] = comboOp % 8;
         // 3: jnz (nothing if A=0)
         case 3 -> {
           if (memory[A]!=0L) {
@@ -107,13 +111,11 @@ public class Day17 extends Day {
         // 4: bxc (bitwise XOR)
         case 4 -> memory[B] = memory[B] ^ memory[C];
         // 5: out (print CSV)
-        case 5 -> {
-          out.add(((int) memory[literalOp] % 8));
-        }
+        case 5 -> out.add(((int) comboOp % 8));
         // 6: bdv (division, result to B)
-        case 6 -> memory[B] = (long) (memory[A] / Math.pow(2, memory[literalOp]));
+        case 6 -> memory[B] = (long) (memory[A] / Math.pow(2, comboOp));
         // 7: cdv (division, result to C)
-        case 7 -> memory[C] = (long) (memory[A] / Math.pow(2, memory[literalOp]));
+        case 7 -> memory[C] = (long) (memory[A] / Math.pow(2, comboOp));
         default -> throw new RuntimeException("Invalid opCode!");
       }
 
@@ -127,5 +129,8 @@ public class Day17 extends Day {
   public static void main(String[] args) {
     //Day.run(Day17::new, "2024/D17_small.txt", "2024/D17_full.txt");
     Day.run(Day17::new, "2024/D17_full.txt");
+
+    //  35184372088832 too low
+    // 246290604621824 too high
   }
 }
