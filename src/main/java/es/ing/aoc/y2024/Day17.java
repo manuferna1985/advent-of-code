@@ -1,6 +1,7 @@
 package es.ing.aoc.y2024;
 
 import es.ing.aoc.common.Day;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,52 +35,40 @@ public class Day17 extends Day {
         .map(Integer::parseInt)
         .toList();
 
-    for (int i=0; i < program.size(); i++) {
-      printIntervals(program, memory, i);
-    }
+    long a = 0;
+
+    // Set initial magic number
+    findMatching(program, memory, 0, program.size() - 1, 0);
+
 
     return "";
   }
 
-  private void printIntervals(List<Integer> program, long[] memory, int programPos){
+  private boolean findMatching(List<Integer> program, long[] memory, long a, int matchingGroup, int tab) {
 
-    long n = 0;
+    for (int i = 0; i < 8; i++) {
+      List<Integer> results = executeCode(program, memory, a);
+      System.out.printf("%s[%15d] - %s%n", StringUtils.leftPad("", tab * 2, "."), a, results.stream().map(String::valueOf).collect(Collectors.joining(",")));
 
-    boolean match = false;
-    long lastMatch = -1, period = -1, groupSize = -1, groupSizeCurrent = -1, firstMatching = -1;
-    while (true) {
-      List<Integer> out = executeCode(program, memory, n);
-      System.out.printf("%-10d - %s%n", n, out);
-      if (out.size() > programPos && out.get(programPos).equals(program.get(programPos))) {
-
-        if (firstMatching == -1){
-          firstMatching = n;
-        }
-        if (!match) {
-          if (lastMatch > 0) {
-            period = n - lastMatch;
-          }
-          lastMatch = n;
-        }
-        match = true;
-
-        //System.out.printf("%-10d - %s%n", n, out);
-        groupSizeCurrent++;
+      if (results.size() < matchingGroup || !results.get(matchingGroup).equals(program.get(matchingGroup))) {
+        a += (long) Math.pow(2, matchingGroup * 3.0);
       } else {
-        if (groupSize == -1 && match){
-          groupSize = groupSizeCurrent;
+        boolean match = findMatching(program, memory, a, matchingGroup - 1, tab + 1);
+        if (!match) {
+          a += (long) Math.pow(2, matchingGroup * 3.0);
         }
-        groupSizeCurrent = 0;
-        match = false;
-      }
-      n++;
-
-      if (n > 50000) {
-        break;
       }
     }
-    //System.out.println(period + " " + groupSize + " " + firstMatching);
+    return false;
+  }
 
+  private long getLongValueForCombination(int[] combination) {
+    StringBuilder build = new StringBuilder();
+    for (int c : combination) {
+      build.append(StringUtils.leftPad(Integer.toBinaryString(c), 3, '0'));
+    }
+    System.out.print(build.toString());
+    return Long.parseLong(build.toString(), 2);
   }
 
   private long[] readMemory(String[] lines) {
@@ -98,20 +87,20 @@ public class Day17 extends Day {
 
     for (int i = 0; i < program.size(); ) {
       Integer opCode = program.get(i);
-      Integer comboOp = program.get(i + 1);
+      Integer literalOp = program.get(i + 1);
 
       boolean jump = false;
       switch (opCode) {
         // 0: adv (division, result to A)
-        case 0 -> memory[A] = (long) (memory[A] / Math.pow(2, memory[comboOp]));
+        case 0 -> memory[A] = (long) (memory[A] / Math.pow(2, memory[literalOp]));
         // 1: bxl (bitwise XOR)
-        case 1 -> memory[B] = memory[B] ^ comboOp;
+        case 1 -> memory[B] = memory[B] ^ literalOp;
         // 2: bst (modulo 8)
-        case 2 -> memory[B] = memory[comboOp] % 8;
+        case 2 -> memory[B] = memory[literalOp] % 8;
         // 3: jnz (nothing if A=0)
         case 3 -> {
           if (memory[A]!=0L) {
-            i = comboOp;
+            i = literalOp;
             jump = true;
           }
         }
@@ -119,13 +108,12 @@ public class Day17 extends Day {
         case 4 -> memory[B] = memory[B] ^ memory[C];
         // 5: out (print CSV)
         case 5 -> {
-          out.add(((int) memory[comboOp] % 8));
-
+          out.add(((int) memory[literalOp] % 8));
         }
         // 6: bdv (division, result to B)
-        case 6 -> memory[B] = (long) (memory[A] / Math.pow(2, memory[comboOp]));
+        case 6 -> memory[B] = (long) (memory[A] / Math.pow(2, memory[literalOp]));
         // 7: cdv (division, result to C)
-        case 7 -> memory[C] = (long) (memory[A] / Math.pow(2, memory[comboOp]));
+        case 7 -> memory[C] = (long) (memory[A] / Math.pow(2, memory[literalOp]));
         default -> throw new RuntimeException("Invalid opCode!");
       }
 
