@@ -3,15 +3,15 @@ package es.ing.aoc.y2024;
 import es.ing.aoc.common.Day;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class Day19 extends Day {
 
-  private final Map<String, Long> cache = new HashMap<>();
+  private final Map<String, Long> cache = new ConcurrentSkipListMap<>();
 
   @Override
   protected String part1(String fileContents) throws Exception {
@@ -31,12 +31,7 @@ public class Day19 extends Day {
   }
 
   private long checkDesignCached(String design, List<String> towels) {
-    if (cache.containsKey(design)) {
-      return cache.get(design);
-    }
-    long result = checkDesign(design, towels);
-    cache.put(design, result);
-    return result;
+    return cache.computeIfAbsent(design, key -> checkDesign(key, towels));
   }
 
   private long checkDesign(String design, List<String> towels) {
