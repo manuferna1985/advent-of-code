@@ -3,47 +3,51 @@ package es.ing.aoc.y2024;
 import es.ing.aoc.common.Day;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class Day19 extends Day {
 
+  private final Map<String, Long> cache = new HashMap<>();
+
   @Override
   protected String part1(String fileContents) throws Exception {
-    String[] lines = fileContents.split(System.lineSeparator());
-    List<String> towels = Arrays.stream(lines[0].split(", ")).toList();
-    List<String> designsToCheck = IntStream.rangeClosed(2, lines.length - 1).mapToObj(i -> lines[i]).toList();
-    return String.valueOf(designsToCheck.parallelStream().filter(design -> checkDesign(design, towels)).count());
-  }
-
-  private boolean checkDesign(String design, List<String> towels) {
-    System.out.println("Checking "+design);
-    return checkDesign(design, towels, 0);
-  }
-
-  private boolean checkDesign(String design, List<String> towels, int index) {
-
-    if (index >= design.length()){
-      return true;
-    }
-
-    for (String towel : towels){
-      if (design.startsWith(towel, index)){
-       boolean match = checkDesign(design, towels, index+towel.length());
-       if (match){
-         return true;
-       }
-      }
-    }
-
-    return false;
+    return String.valueOf(getTowelCombinations(fileContents).filter(r -> r > 0).count());
   }
 
   @Override
   protected String part2(String fileContents) throws Exception {
-    String[] lines = fileContents.split(System.lineSeparator());
+    return String.valueOf(getTowelCombinations(fileContents).mapToLong(Long::valueOf).sum());
+  }
 
-    return "";
+  private Stream<Long> getTowelCombinations(String fileContents) {
+    String[] lines = fileContents.split(System.lineSeparator());
+    List<String> towels = Arrays.stream(lines[0].split(", ")).toList();
+    List<String> designsToCheck = IntStream.rangeClosed(2, lines.length - 1).mapToObj(i -> lines[i]).toList();
+    return designsToCheck.stream().map(design -> checkDesignCached(design, towels));
+  }
+
+  private long checkDesignCached(String design, List<String> towels) {
+    if (cache.containsKey(design)) {
+      return cache.get(design);
+    }
+    long result = checkDesign(design, towels);
+    cache.put(design, result);
+    return result;
+  }
+
+  private long checkDesign(String design, List<String> towels) {
+    if (design.isEmpty()) {
+      return 1L;
+    }
+    return towels.stream()
+        .filter(design::startsWith)
+        .map(t -> checkDesignCached(design.substring(t.length()), towels))
+        .mapToLong(Long::longValue)
+        .sum();
   }
 
   public static void main(String[] args) {
