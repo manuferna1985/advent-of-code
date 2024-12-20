@@ -3,6 +3,7 @@ package es.ing.aoc.y2024;
 import es.ing.aoc.common.Day;
 import es.ing.aoc.common.MatrixUtils;
 import es.ing.aoc.common.Point;
+import es.ing.aoc.common.SearchUtils;
 import es.ing.aoc.common.dijkstra.GenericGraph;
 import es.ing.aoc.common.dijkstra.GenericNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -49,25 +50,14 @@ public class Day18 extends Day {
     Point start = Point.of(0, 0);
     Point end = Point.of(mapSize, mapSize);
 
-    int min = simulationLimit;
-    int max = flakes.size();
-
     // Dijkstra with Binary Search from simulation to max flakes number
-    while (true) {
-      int limit = (min + max) / 2;
-      if (getMinimumPathToEnd(start, end, flakes, limit, mapSize) < Integer.MAX_VALUE) {
-        // Add more flakes
-        min = limit;
-      } else {
-        // Dead-end, remove flakes
-        max = limit;
-      }
-
-      if (min + 1==max) {
-        Point firstBlockingFlake = inverseMap(flakes).get(min);
-        return "%d,%d".formatted(firstBlockingFlake.y, firstBlockingFlake.x);
-      }
-    }
+    int criticalFlakes = SearchUtils.binarySearch(
+        simulationLimit,
+        flakes.size(),
+        n -> getMinimumPathToEnd(start, end, flakes, n, mapSize)==Integer.MAX_VALUE,
+        false);
+    Point firstBlockingFlake = inverseMap(flakes).get(criticalFlakes);
+    return "%d,%d".formatted(firstBlockingFlake.y, firstBlockingFlake.x);
   }
 
   private Map<Point, Integer> buildFlakes(String fileContents) {
@@ -109,8 +99,7 @@ public class Day18 extends Day {
   }
 
   private void addEdge(Map<Point, List<GenericNode<Point>>> edges, Point a, Point b) {
-    edges.computeIfAbsent(a, k -> new ArrayList<>());
-    edges.get(a).add(new GenericNode<>(b, 1));
+    edges.computeIfAbsent(a, k -> new ArrayList<>()).add(new GenericNode<>(b, 1));
   }
 
   private Integer getMinimumPathToEnd(Point start, Point end, Map<Point, Integer> flakes, int limitSimulation, int mapSize) {
