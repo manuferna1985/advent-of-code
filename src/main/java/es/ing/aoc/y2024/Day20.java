@@ -3,6 +3,7 @@ package es.ing.aoc.y2024;
 import es.ing.aoc.common.Day;
 import es.ing.aoc.common.MatrixUtils;
 import es.ing.aoc.common.Point;
+import es.ing.aoc.common.RangeUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
@@ -16,66 +17,45 @@ public class Day20 extends Day {
   private static final String START = "S";
   private static final String END = "E";
   private static final String EMPTY = ".";
-  private static final String WALL = "#";
 
   @Override
   protected String part1(String fileContents) throws Exception {
+    return algorithm(fileContents, 2);
+  }
+
+  @Override
+  protected String part2(String fileContents) throws Exception {
+    return algorithm(fileContents, 20);
+  }
+
+  private String algorithm(String fileContents, int maxCheatDistance) {
     String[][] maze = MatrixUtils.readMatrixFromFile(fileContents);
     List<Point> path = findPath(maze);
 
-    System.out.println(path.size());
-
-    Map<Integer, List<Point>> savedPositions = new HashMap<>();
-
-    for (int i = 0; i < path.size(); i++) {
-      Point p = path.get(i);
-      // Let's count how many cheats (and how much will they save) from the p position
-
-      if (p.x > 2) {
-        // NORTH
-        saveCheat(maze, p, Point.of(p.x - 2, p.y), Point.of(p.x - 1, p.y), path, i, savedPositions);
-      }
-
-      if (p.x < maze.length - 3) {
-        // SOUTH
-        saveCheat(maze, p, Point.of(p.x + 2, p.y), Point.of(p.x + 1, p.y), path, i, savedPositions);
-      }
-
-      if (p.y > 2) {
-        // WEST
-        saveCheat(maze, p, Point.of(p.x, p.y - 2), Point.of(p.x, p.y - 1), path, i, savedPositions);
-      }
-
-      if (p.y < maze[0].length - 3) {
-        // EAST
-        saveCheat(maze, p, Point.of(p.x, p.y + 2), Point.of(p.x, p.y + 1), path, i, savedPositions);
-      }
-    }
-
     return String.valueOf(
-        savedPositions.entrySet().stream()
+        calculateCheats(path, maxCheatDistance).entrySet().stream()
             .filter(entry -> entry.getKey() >= 100)
             .map(entry -> entry.getValue().size())
             .mapToInt(Integer::intValue)
             .sum());
   }
 
-  private static void saveCheat(String[][] maze, Point current, Point cheat, Point jump, List<Point> path, int i, Map<Integer, List<Point>> savedPositions) {
-    if (maze[cheat.x][cheat.y].equals(EMPTY) && maze[jump.x][jump.y].equals(WALL)) {
-      int j = path.indexOf(cheat);
-      if (j > i && j!=-1) {
-        int savedPath = j - i - 2;
-        //System.out.printf("Cheat from %s to %s will save %d positions%n", current, cheat, savedPath);
-        savedPositions.computeIfAbsent(savedPath, key -> new ArrayList<>()).add(cheat);
+  private Map<Integer, List<Point>> calculateCheats(List<Point> path, int maxCheatDistance) {
+    Map<Integer, List<Point>> savedPositions = new HashMap<>();
+    for (int i = 0; i < path.size(); i++) {
+      Point pi = path.get(i);
+      for (int j = i + 1; j < path.size(); j++) {
+        Point pj = path.get(j);
+        int manhattanDistance = RangeUtils.getManhattanDistance(pi, pj);
+        if (manhattanDistance <= maxCheatDistance) {
+          int savedPath = j - i - manhattanDistance;
+          if (savedPath > 0) {
+            savedPositions.computeIfAbsent(savedPath, key -> new ArrayList<>()).add(pj);
+          }
+        }
       }
     }
-  }
-
-  @Override
-  protected String part2(String fileContents) throws Exception {
-    String[] lines = fileContents.split(System.lineSeparator());
-
-    return "";
+    return savedPositions;
   }
 
   private Point find(String[][] maze, String character) {
