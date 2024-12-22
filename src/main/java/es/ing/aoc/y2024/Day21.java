@@ -3,6 +3,7 @@ package es.ing.aoc.y2024;
 import es.ing.aoc.common.Day;
 import es.ing.aoc.common.Point;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.paukov.combinatorics3.Generator;
 
 import java.util.ArrayList;
@@ -16,6 +17,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Day21 extends Day {
+
+  private static final Map<Pair<String, String>, Combination> CACHE = new HashMap<>();
 
   private static final String HOLE = "@";
   private static final String START = "A";
@@ -58,20 +61,16 @@ public class Day21 extends Day {
     return String.valueOf(
         Arrays.stream(fileContents.split(System.lineSeparator()))
             .map(Combination::new)
-            .map(c1 -> {
-              int numericPart = Integer.parseInt(StringUtils.join(c1.numbers, "").substring(0, 3));
-              List<Combination> c2List = this.getComplexity2(c1, NUMERICAL_POINTS, 0);
-              for (Combination c2 : c2List) {
-                List<Combination> c3List = this.getComplexity2(c2, DIRECTIONAL_POINTS, 0);
-                for (Combination c3 : c3List) {
-                  List<Combination> c4List = this.getComplexity2(c3, DIRECTIONAL_POINTS, 0);
-                  for (Combination c4 : c4List) {
-                    System.out.printf("[%s] = %d%n", c4.numbers, c4.numbers.size());
-                  }
-                }
+            .map(c0 -> {
+              int numericPart = Integer.parseInt(StringUtils.join(c0.numbers, "").substring(0, 3));
+              Combination c1 = this.getComplexity2(c0, NUMERICAL_POINTS, 0);
+              for (int i=0; i<2; i++) {
+                c1 = this.getComplexity2(c1, DIRECTIONAL_POINTS, 0);
               }
 
-              return 0;
+              System.out.printf("[%s] = %d%n", c0, c1.numbers.size());
+
+              return c1.numbers.size() * numericPart;
             })
             .mapToInt(Integer::intValue)
             .sum());
@@ -84,40 +83,36 @@ public class Day21 extends Day {
     return "";
   }
 
-  private List<Combination> getComplexity2(Combination comb, Map<String, Point> pointsMap, int tabs) {
+  private Combination getComplexity2(Combination comb, Map<String, Point> pointsMap, int level) {
 
     //System.out.println(StringUtils.repeat("-", 150));
 
-    System.out.printf("%s%n", comb.numbers);
+    //System.out.printf("Looping over combination [%s]%n", comb.numbers);
 
-    List<Combination> aliveCombinations = new ArrayList<>();
-    aliveCombinations.add(new Combination(new ArrayList<>()));
-
+    Combination next = new Combination(new ArrayList<>());
     String current = START;
     for (int i = 0; i < comb.numbers.size(); i++) {
-      List<Combination> combs = getOptimumPathFor(current, comb.numbers.get(i), pointsMap, tabs);
-
-      List<Combination> nextCombs = new ArrayList<>();
-      for (Combination alive : aliveCombinations) {
-        for (Combination next : combs) {
-          Combination newC = new Combination(new ArrayList<>());
-          newC.numbers.addAll(alive.numbers);
-          newC.numbers.addAll(next.numbers);
-          nextCombs.add(newC);
-        }
-      }
-      aliveCombinations = nextCombs;
+      next.numbers.addAll(getCachedOptimumPathFor(current, comb.numbers.get(i), pointsMap, level).numbers);
       current = comb.numbers.get(i);
     }
 
     //System.out.println(StringUtils.repeat("-", 150));
 
-    return aliveCombinations;
+    return next;
   }
 
-  private List<Combination> getOptimumPathFor(String aChar, String bChar, Map<String, Point> pointsMap, int tabs) {
+  private Combination getCachedOptimumPathFor(String aChar, String bChar, Map<String, Point> pointsMap, int level) {
+    if (level == 0) {
+      return CACHE.computeIfAbsent(Pair.of(aChar, bChar),
+          key -> getOptimumPathFor(aChar, bChar, pointsMap, level));
+    } else {
+      return getOptimumPathFor(aChar, bChar, pointsMap, level);
+    }
+  }
 
-    //System.out.printf("%sCalculating optimum path from [%s] to [%s]%n", StringUtils.repeat(" ", tabs * 2), aChar, bChar);
+  private Combination getOptimumPathFor(String aChar, String bChar, Map<String, Point> pointsMap, int level) {
+
+    //System.out.printf("%sCalculating optimum path from [%s] to [%s]%n", StringUtils.repeat(" ", level * 2), aChar, bChar);
 
     Point a = pointsMap.get(aChar);
     Point b = pointsMap.get(bChar);
@@ -142,9 +137,25 @@ public class Day21 extends Day {
 
     combs.forEach(this::addCombEnd);
 
-    //System.out.printf("%s%s%n", StringUtils.repeat(" ", tabs * 2), combs);
+    //System.out.printf("%s%s%n", StringUtils.repeat(" ", level * 2), combs);
 
-    return combs;
+    if (combs.size() > 1 && level < 3){
+
+      Combination nextA = getComplexity2(combs.get(0), DIRECTIONAL_POINTS, level + 1);
+      Combination nextB = getComplexity2(combs.get(1), DIRECTIONAL_POINTS, level + 1);
+
+      //System.out.printf("%d VS %d%n", nextA.numbers.size(), nextB.numbers.size());
+      while (nextA.numbers.size() == nextB.numbers.size()){
+        // Another iteration
+        nextA = getComplexity2(nextA, DIRECTIONAL_POINTS, level + 1);
+        nextB = getComplexity2(nextB, DIRECTIONAL_POINTS, level + 1);
+      }
+
+      return nextA.numbers.size() > nextB.numbers.size() ? combs.get(1) : combs.get(0);
+
+    } else {
+      return combs.get(0);
+    }
   }
 
   private Combination addCombEnd(Combination combination) {
@@ -263,6 +274,6 @@ public class Day21 extends Day {
   }
 
   public static void main(String[] args) {
-    Day.run(Day21::new, "2024/D21_small.txt");//, "2024/D21_full.txt");
+    Day.run(Day21::new, "2024/D21_small.txt", "2024/D21_full.txt");
   }
 }
