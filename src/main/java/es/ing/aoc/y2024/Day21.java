@@ -8,7 +8,6 @@ import org.paukov.combinatorics3.Generator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,61 +57,85 @@ public class Day21 extends Day {
 
   @Override
   protected String part1(String fileContents) throws Exception {
-    return String.valueOf(
-        Arrays.stream(fileContents.split(System.lineSeparator()))
-            .map(Combination::new)
-            .map(c0 -> {
-              int numericPart = Integer.parseInt(StringUtils.join(c0.numbers, "").substring(0, 3));
-              Combination c1 = this.getComplexity2(c0, NUMERICAL_POINTS, 0);
-              for (int i=0; i<2; i++) {
-                c1 = this.getComplexity2(c1, DIRECTIONAL_POINTS, 0);
-              }
-
-              System.out.printf("[%s] = %d%n", c0, c1.numbers.size());
-
-              return c1.numbers.size() * numericPart;
-            })
-            .mapToInt(Integer::intValue)
-            .sum());
+    return String.valueOf(algorithm(fileContents, 2));
   }
 
   @Override
   protected String part2(String fileContents) throws Exception {
-    String[] lines = fileContents.split(System.lineSeparator());
-
-    return "";
+    return String.valueOf(algorithm(fileContents, 25));
   }
 
-  private Combination getComplexity2(Combination comb, Map<String, Point> pointsMap, int level) {
+  private long algorithm(String fileContents, int directionalRobotsNumber) {
 
-    //System.out.println(StringUtils.repeat("-", 150));
+    return Arrays.stream(fileContents.split(System.lineSeparator()))
+        .map(Combination::new)
+        .map(c0 -> {
+          int numericPart = Integer.parseInt(StringUtils.join(c0.numbers, "").substring(0, 3));
+          Combination c1 = this.getComplexity(c0, NUMERICAL_POINTS, true);
 
-    //System.out.printf("Looping over combination [%s]%n", comb.numbers);
+          // The key here is to split the next iteration keys combination into sequences, splitting the chain by "A's".
+          // For instance: "<v<A.>>^A.vA.^A.<v<A" --> [("<v<A":2),(">>^A":1),("vA":1),("^A":1)]
+          // With this, we don't really need to keep the whole combination, which will grow exponentially, but
+          // just these sequences and the number of times each one is repeated, cause they're independent between them,
+          // as they always end in the "A" button.
+          Map<String, Long> sequences = buildSequencesFromComb(c1);
 
+          for (int i = 0; i < directionalRobotsNumber; i++) {
+            Map<String, Long> nextSequences = new HashMap<>();
+
+            for (var entry : sequences.entrySet()) {
+              c1 = this.getComplexity(new Combination(entry.getKey()), DIRECTIONAL_POINTS, true);
+              for (var entry2 : buildSequencesFromComb(c1).entrySet()) {
+                if (!nextSequences.containsKey(entry2.getKey())) {
+                  nextSequences.put(entry2.getKey(), entry.getValue() * entry2.getValue());
+                } else {
+                  nextSequences.put(entry2.getKey(), nextSequences.get(entry2.getKey()) + (entry.getValue() * entry2.getValue()));
+                }
+              }
+            }
+            sequences = nextSequences;
+          }
+
+          long totalSeqLength = sequences.entrySet()
+              .stream().mapToLong(entry -> entry.getKey().length() * entry.getValue()).sum();
+
+          System.out.printf("[%s] = %d%n", c0, totalSeqLength);
+
+          return totalSeqLength * numericPart;
+        })
+        .mapToLong(Long::longValue)
+        .sum();
+  }
+
+  private Map<String, Long> buildSequencesFromComb(Combination c) {
+    Map<String, Long> seqsMap = new HashMap<>();
+    String[] tokens = StringUtils.join(c.numbers, "").replace("A", "A|").split("\\|");
+    for (String t : tokens) {
+      seqsMap.put(t, seqsMap.computeIfAbsent(t, k -> 0L) + 1L);
+    }
+    return seqsMap;
+  }
+
+  private Combination getComplexity(Combination comb, Map<String, Point> pointsMap, boolean goDeep) {
     Combination next = new Combination(new ArrayList<>());
     String current = START;
     for (int i = 0; i < comb.numbers.size(); i++) {
-      next.numbers.addAll(getCachedOptimumPathFor(current, comb.numbers.get(i), pointsMap, level).numbers);
+      next.numbers.addAll(getCachedOptimumPathFor(current, comb.numbers.get(i), pointsMap, goDeep).numbers);
       current = comb.numbers.get(i);
     }
-
-    //System.out.println(StringUtils.repeat("-", 150));
-
     return next;
   }
 
-  private Combination getCachedOptimumPathFor(String aChar, String bChar, Map<String, Point> pointsMap, int level) {
-    if (level == 0) {
+  private Combination getCachedOptimumPathFor(String aChar, String bChar, Map<String, Point> pointsMap, boolean goDeep) {
+    if (goDeep) {
       return CACHE.computeIfAbsent(Pair.of(aChar, bChar),
-          key -> getOptimumPathFor(aChar, bChar, pointsMap, level));
+          key -> getOptimumPathFor(aChar, bChar, pointsMap, true));
     } else {
-      return getOptimumPathFor(aChar, bChar, pointsMap, level);
+      return getOptimumPathFor(aChar, bChar, pointsMap, false);
     }
   }
 
-  private Combination getOptimumPathFor(String aChar, String bChar, Map<String, Point> pointsMap, int level) {
-
-    //System.out.printf("%sCalculating optimum path from [%s] to [%s]%n", StringUtils.repeat(" ", level * 2), aChar, bChar);
+  private Combination getOptimumPathFor(String aChar, String bChar, Map<String, Point> pointsMap, boolean goDeep) {
 
     Point a = pointsMap.get(aChar);
     Point b = pointsMap.get(bChar);
@@ -135,30 +158,20 @@ public class Day21 extends Day {
           .toList();
     }
 
-    combs.forEach(this::addCombEnd);
+    combs.forEach(this::addCombinationEnd);
 
-    //System.out.printf("%s%s%n", StringUtils.repeat(" ", level * 2), combs);
-
-    if (combs.size() > 1 && level < 3){
-
-      Combination nextA = getComplexity2(combs.get(0), DIRECTIONAL_POINTS, level + 1);
-      Combination nextB = getComplexity2(combs.get(1), DIRECTIONAL_POINTS, level + 1);
-
-      //System.out.printf("%d VS %d%n", nextA.numbers.size(), nextB.numbers.size());
-      while (nextA.numbers.size() == nextB.numbers.size()){
-        // Another iteration
-        nextA = getComplexity2(nextA, DIRECTIONAL_POINTS, level + 1);
-        nextB = getComplexity2(nextB, DIRECTIONAL_POINTS, level + 1);
+    if (combs.size() > 1 && goDeep) {
+      Combination nextA = combs.get(0), nextB = combs.get(1);
+      while (nextA.numbers.size()==nextB.numbers.size()) {
+        nextA = getComplexity(nextA, DIRECTIONAL_POINTS, false);
+        nextB = getComplexity(nextB, DIRECTIONAL_POINTS, false);
       }
-
-      return nextA.numbers.size() > nextB.numbers.size() ? combs.get(1) : combs.get(0);
-
-    } else {
-      return combs.get(0);
+      return nextA.numbers.size() > nextB.numbers.size() ? combs.get(1):combs.get(0);
     }
+    return combs.getFirst();
   }
 
-  private Combination addCombEnd(Combination combination) {
+  private Combination addCombinationEnd(Combination combination) {
     combination.numbers.add(START);
     return combination;
   }
@@ -169,77 +182,6 @@ public class Day21 extends Day {
       turns += c.numbers.get(i).equals(c.numbers.get(i + 1)) ? 0:1;
     }
     return turns <= 1;
-  }
-
-  private Integer getComplexity(Combination comb) {
-
-    int numericPart = Integer.parseInt(StringUtils.join(comb.numbers, "").substring(0, 3));
-
-    System.out.println(comb);
-    List<Combination> c1 = getMinLengthCombs(getSeqForNumericKeyPad(comb));
-    System.out.printf("[%d] -> %d%n", c1.size(), c1.get(0).numbers.size());
-    //System.out.println(c1);
-
-    for (int i = 0; i < 2; i++) {
-      List<Combination> c2 = getMinLengthCombs(c1.stream().flatMap(c -> getSeqForDirectionalKeyPad(c).stream()).toList());
-      System.out.printf("[%d] -> %d%n", c2.size(), c2.get(0).numbers.size());
-      //System.out.println(c2);
-      c1 = c2;
-    }
-
-    return c1.get(0).numbers.size() * numericPart;
-  }
-
-  private List<Combination> getMinLengthCombs(List<Combination> list) {
-    int minLength = list.stream().map(c -> c.numbers.size()).mapToInt(Integer::intValue).min().orElse(0);
-    return list.stream().filter(c -> c.numbers.size()==minLength).toList();
-  }
-
-  private List<Combination> getSeqForDirectionalKeyPad(Combination comb) {
-    return getSeqForKeyPad(comb, START, DIRECTIONAL_KEYPAD, find(DIRECTIONAL_KEYPAD, HOLE));
-  }
-
-  private List<Combination> getSeqForNumericKeyPad(Combination comb) {
-    return getSeqForKeyPad(comb, START, NUMERIC_KEYPAD, find(NUMERIC_KEYPAD, HOLE));
-  }
-
-  private List<Combination> getSeqForKeyPad(Combination comb, String current, String[][] keyPad, Point hole) {
-
-    if (comb.numbers.isEmpty()) {
-      return List.of(new Combination(Collections.emptyList()));
-    }
-
-    Point a = find(keyPad, current);
-    Point b = find(keyPad, comb.numbers.get(0));
-
-    List<Combination> combs1;
-    if (Objects.equals(a, b)) {
-      combs1 = List.of(new Combination(Collections.emptyList()));
-    } else {
-      List<String> movs = new ArrayList<>();
-      IntStream.range(b.x, a.x).forEach(n -> movs.add("^"));
-      IntStream.range(a.x, b.x).forEach(n -> movs.add("v"));
-      IntStream.range(b.y, a.y).forEach(n -> movs.add("<"));
-      IntStream.range(a.y, b.y).forEach(n -> movs.add(">"));
-
-      combs1 = Generator.permutation(movs).simple().stream()
-          .map(Combination::new)
-          .filter(c -> isAllowed(c, a, hole))
-          .toList();
-    }
-    List<Combination> combs2 = getSeqForKeyPad(comb, comb.numbers.remove(0), keyPad, hole);
-
-    List<Combination> seqs = new ArrayList<>();
-    for (Combination c1 : combs1) {
-      for (Combination c2 : combs2) {
-        List<String> c3 = new ArrayList<>(c1.numbers);
-        c3.add(START);
-        c3.addAll(c2.numbers);
-        seqs.add(new Combination(c3));
-      }
-    }
-
-    return seqs;
   }
 
   private boolean isAllowed(Combination c, Point start, Point hole) {
@@ -260,17 +202,6 @@ public class Day21 extends Day {
     }
 
     return !path.contains(hole);
-  }
-
-  private Point find(String[][] keyPad, String character) {
-    for (int x = 0; x < keyPad.length; x++) {
-      for (int y = 0; y < keyPad[x].length; y++) {
-        if (character.equals(keyPad[x][y])) {
-          return Point.of(x, y);
-        }
-      }
-    }
-    return null;
   }
 
   public static void main(String[] args) {
