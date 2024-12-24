@@ -103,7 +103,7 @@ public class Day24 extends Day {
     List<Connection> connections = buildConnections(lines);
     int totalZ = getTotalZFromConnections(connections);
 
-    BigInteger x = BigInteger.ONE, y = BigInteger.ONE;
+    BigInteger x = BigInteger.ZERO, y = BigInteger.ONE;
     for (int z=0; z<totalZ; z++){
       Map<String, Boolean> wires = buildWires(x, y, totalZ);
       BigInteger zValue = BigInteger.valueOf(simulateSystemUntilZ(connections, wires, totalZ));
@@ -112,7 +112,7 @@ public class Day24 extends Day {
         System.out.printf("[z%s] %d + %d = %d%n", StringUtils.leftPad(String.valueOf(z), 2, "0"), x, y, zValue);
       //}
 
-      x = x.multiply(BigInteger.TWO);
+      //x = x.multiply(BigInteger.TWO);
       y = y.multiply(BigInteger.TWO);
     }
 
