@@ -1,27 +1,22 @@
 package es.ing.aoc.y2024;
 
 import es.ing.aoc.common.Day;
-import es.ing.aoc.common.Tri;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.paukov.combinatorics3.Generator;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.Vector;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class Day24 extends Day {
 
-  private static final Random RANDOM = new Random();
   private static final String XOR = "XOR";
   private static final String AND = "AND";
   private static final String OR = "OR";
@@ -56,6 +51,130 @@ public class Day24 extends Day {
     int totalZ = getTotalZFromConnections(connections);
     BigInteger zValue = simulateSystemUntilZ(connections, wires, totalZ);
     return String.valueOf(zValue);
+  }
+
+  @Override
+  protected String part2(String fileContents) throws Exception {
+    String[] lines = fileContents.split(System.lineSeparator() + System.lineSeparator());
+    List<Connection> connections = buildConnections(lines);
+    int totalZ = getTotalZFromConnections(connections);
+
+    // Initial exception:   x00 XOR y00 => z00 --- S(0)
+    //                      x00 AND y00 => bdj --- Cout(0)
+    // for i=01 to i=44
+    //   x(i)    XOR  y(i)        => sum(i)      Ex: y01 XOR x01 -> twd
+    //   x(i)    AND  y(i)        => carry(i)    Ex: y01 AND x01 -> gwd
+    //   sum(i)  XOR  Cout(i-1)   => S(i)        Ex: twd XOR bdj -> z01
+    //   sum(i)  AND  Cout(i-1)   => Aux(i)      Ex: twd AND bdj -> cbq
+    //   Aux(i)  OR   carry(i)    => Cout(i)     Ex: cbq OR gwd  -> rhr
+    //
+    // End exception:       vdn OR qtn  => z45 --- Cout(44)
+
+    Set<Connection> swappedConns = new HashSet<>();
+
+    // Loop to get all simple Sum's and Carry's for each bit
+    Optional<Connection> rOpt;
+    Connection r;
+    for (int i = 0; i < totalZ - 1; i++) {
+      // Search Sum's
+      rOpt = searchFirstConnectionWith(connections, getX(i), getY(i), XOR, "*");
+      if (rOpt.isPresent() && i > 0) {
+        r = rOpt.get();
+        // sum[i] CANNOT be a var, and should has XOR and AND gates with Cout(-1)
+        Optional<Connection> c1 = searchFirstConnectionWith(connections, r.result, "*", XOR, "*");
+        Optional<Connection> c2 = searchFirstConnectionWith(connections, r.result, "*", AND, "*");
+
+        if (c1.isEmpty() || c2.isEmpty() || connectionHasAllVars(c1.get()) || connectionHasAllVars(c2.get())) {
+          swappedConns.add(r);
+        }
+      }
+
+      // Search Carry's
+      rOpt = searchFirstConnectionWith(connections, getX(i), getY(i), AND, "*");
+      if (rOpt.isPresent() && i > 0) {
+        r = rOpt.get();
+        // carry[i] CANNOT be a var, and should has OR with another wire also not var
+        Optional<Connection> c1 = searchFirstConnectionWith(connections, r.result, "*", OR, "*");
+
+        if (c1.isEmpty() || connectionHasAllVars(c1.get())) {
+          swappedConns.add(r);
+        }
+      }
+
+      if (i > 0) {
+        // Compute and search S's
+        Optional<Connection> c1 = searchFirstConnectionWith(connections, "*", "*", XOR, getZ(i));
+        if (c1.isEmpty()) {
+          Optional<Connection> c2 = searchFirstConnectionWith(connections, "*", "*", "*", getZ(i));
+          if (c2.isPresent()) {
+            swappedConns.add(c2.get());
+          }
+        }
+      }
+    }
+
+    List<Connection> c2 = searchAllConnectionsWith(connections, "*", "*", XOR, "*",
+        c -> !wireIsVariable(c.left) && !wireIsVariable(c.right) && !c.result.startsWith("z"));
+
+    if (!c2.isEmpty()) {
+      swappedConns.addAll(c2);
+    }
+
+    return swappedConns.stream().map(Connection::result).sorted().collect(Collectors.joining(","));
+  }
+
+  private boolean connectionHasAllVars(Connection c) {
+    return Stream.of(c.left, c.right, c.result).allMatch(this::wireIsVariable);
+  }
+
+  private boolean wireIsVariable(String wire) {
+    return wire.startsWith("x") || wire.startsWith("y") || wire.startsWith("z");
+  }
+
+  private String getX(int i) {
+    return "x%s".formatted(StringUtils.leftPad(String.valueOf(i), 2, "0"));
+  }
+
+  private String getY(int i) {
+    return "y%s".formatted(StringUtils.leftPad(String.valueOf(i), 2, "0"));
+  }
+
+  private String getZ(int i) {
+    return "z%s".formatted(StringUtils.leftPad(String.valueOf(i), 2, "0"));
+  }
+
+  private Optional<Connection> searchFirstConnectionWith(List<Connection> connectionList,
+                                                         String a,
+                                                         String b,
+                                                         String gate,
+                                                         String result) {
+    return searchAllConnectionsWith(connectionList, a, b, gate, result).stream().findFirst();
+  }
+
+  private List<Connection> searchAllConnectionsWith(List<Connection> connectionList,
+                                                    String a,
+                                                    String b,
+                                                    String gate,
+                                                    String result) {
+    return searchAllConnectionsWith(connectionList, a, b, gate, result, c -> true);
+  }
+
+  private List<Connection> searchAllConnectionsWith(List<Connection> connectionList,
+                                                    String a,
+                                                    String b,
+                                                    String gate,
+                                                    String result,
+                                                    Predicate<Connection> extraCondition) {
+    return connectionList.stream()
+        .filter(c -> equalWires(c.gate, gate))
+        .filter(c -> equalWires(c.result, result))
+        .filter(c -> ((equalWires(c.left, a) && equalWires(c.right, b)) || (equalWires(c.left, b) && equalWires(c.right, a))))
+        .filter(extraCondition)
+        .toList();
+  }
+
+  private boolean equalWires(String w1, String w2) {
+    return w1.equals("*") || w2.equals("*") || w1.equals(w2);
   }
 
   private BigInteger simulateSystemUntilZ(List<Connection> connections, Map<String, Boolean> wires, long totalZ) {
@@ -103,80 +222,6 @@ public class Day24 extends Day {
 
   private int getActiveZWires(Map<String, Boolean> wires) {
     return (int) wires.keySet().stream().filter(key -> key.startsWith("z")).count();
-  }
-
-  @Override
-  protected String part2(String fileContents) throws Exception {
-    String[] lines = fileContents.split(System.lineSeparator() + System.lineSeparator());
-    List<Connection> connections = buildConnections(lines);
-
-    int totalZ = getTotalZFromConnections(connections);
-
-    List<Tri<Long, Connection, Connection>> swappedData = new Vector<>();
-    Generator.combination(connections).simple(2).stream().parallel().forEach(consToSwap -> {
-
-      Connection c1 = consToSwap.get(0);
-      Connection c2 = consToSwap.get(1);
-
-      List<Connection> connectionsSwapped = new ArrayList<>(connections);
-      connectionsSwapped.remove(c1);
-      connectionsSwapped.remove(c2);
-
-      connectionsSwapped.add(new Connection(c1.left, c1.gate, c1.right, c2.result));
-      connectionsSwapped.add(new Connection(c2.left, c2.gate, c2.right, c1.result));
-
-      long diff = 0L;
-      for (int i = 0; i < 100; i++) {
-        BigInteger x = new BigInteger(totalZ - 1, RANDOM);
-        BigInteger y = new BigInteger(totalZ - 1, RANDOM);
-        BigInteger expectedZ = x.add(y);
-        String expectedZBinary = convertToBinaryWithLength(expectedZ, totalZ);
-        Map<String, Boolean> wires = buildRandomInputs(x, y, totalZ - 1);
-
-        BigInteger zValue = simulateSystemUntilZ(connectionsSwapped, wires, totalZ);
-        if (zValue!=null) {
-          String zBinaryValue = convertToBinaryWithLength(zValue, totalZ);
-          diff += getSimilarity(expectedZBinary, zBinaryValue);
-        } else {
-          diff -= 500000;
-        }
-      }
-      swappedData.add(Tri.of(diff, c1, c2));
-    });
-
-    swappedData.sort(Comparator.comparing(o -> o.a));
-    Collections.reverse(swappedData);
-
-    System.out.printf("[%d] %s <--> %s%n",
-        swappedData.getFirst().a,
-        swappedData.getFirst().b.result,
-        swappedData.getFirst().c.result);
-
-    return "";
-  }
-
-  private Map<String, Boolean> buildRandomInputs(BigInteger x, BigInteger y, int fixedLength) {
-    Map<String, Boolean> wires = new HashMap<>();
-
-    String xBinary = convertToBinaryWithLength(x, fixedLength);
-    String yBinary = convertToBinaryWithLength(y, fixedLength);
-
-    String nPadded;
-    for (int n = fixedLength - 1; n >= 0; n--) {
-      nPadded = StringUtils.leftPad(String.valueOf((fixedLength - n - 1)), 2, "0");
-      wires.put("x%s".formatted(nPadded), xBinary.charAt(n)=='1');
-      wires.put("y%s".formatted(nPadded), yBinary.charAt(n)=='1');
-    }
-
-    return wires;
-  }
-
-  private static String convertToBinaryWithLength(BigInteger x, int fixedLength) {
-    return StringUtils.leftPad(x.toString(2), fixedLength, "0");
-  }
-
-  private static long getSimilarity(String c1, String c2) {
-    return IntStream.range(0, c1.length()).filter(n -> c1.charAt(n)==c2.charAt(n)).count();
   }
 
   public static void main(String[] args) {
