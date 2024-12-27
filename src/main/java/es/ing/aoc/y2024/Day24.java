@@ -32,13 +32,12 @@ public class Day24 extends Day {
       Boolean rightValue = wires.get(right);
 
       if (leftValue!=null && rightValue!=null) {
-        wires.put(result,
-            switch (gate) {
-              case XOR -> !leftValue.equals(rightValue);
-              case OR -> leftValue || rightValue;
-              case AND -> leftValue && rightValue;
-              default -> throw new RuntimeException("Invalid gate!");
-            });
+        wires.put(result, switch (gate) {
+          case XOR -> !leftValue.equals(rightValue);
+          case OR -> leftValue || rightValue;
+          case AND -> leftValue && rightValue;
+          default -> throw new RuntimeException("Invalid gate!");
+        });
       }
     }
   }
@@ -106,9 +105,7 @@ public class Day24 extends Day {
         Optional<Connection> c1 = searchFirstConnectionWith(connections, "*", "*", XOR, getZ(i));
         if (c1.isEmpty()) {
           Optional<Connection> c2 = searchFirstConnectionWith(connections, "*", "*", "*", getZ(i));
-          if (c2.isPresent()) {
-            swappedConns.add(c2.get());
-          }
+          c2.ifPresent(swappedConns::add);
         }
       }
     }
@@ -143,28 +140,15 @@ public class Day24 extends Day {
     return "z%s".formatted(StringUtils.leftPad(String.valueOf(i), 2, "0"));
   }
 
-  private Optional<Connection> searchFirstConnectionWith(List<Connection> connectionList,
-                                                         String a,
-                                                         String b,
-                                                         String gate,
-                                                         String result) {
+  private Optional<Connection> searchFirstConnectionWith(List<Connection> connectionList, String a, String b, String gate, String result) {
     return searchAllConnectionsWith(connectionList, a, b, gate, result).stream().findFirst();
   }
 
-  private List<Connection> searchAllConnectionsWith(List<Connection> connectionList,
-                                                    String a,
-                                                    String b,
-                                                    String gate,
-                                                    String result) {
+  private List<Connection> searchAllConnectionsWith(List<Connection> connectionList, String a, String b, String gate, String result) {
     return searchAllConnectionsWith(connectionList, a, b, gate, result, c -> true);
   }
 
-  private List<Connection> searchAllConnectionsWith(List<Connection> connectionList,
-                                                    String a,
-                                                    String b,
-                                                    String gate,
-                                                    String result,
-                                                    Predicate<Connection> extraCondition) {
+  private List<Connection> searchAllConnectionsWith(List<Connection> connectionList, String a, String b, String gate, String result, Predicate<Connection> extraCondition) {
     return connectionList.stream()
         .filter(c -> equalWires(c.gate, gate))
         .filter(c -> equalWires(c.result, result))
@@ -196,16 +180,14 @@ public class Day24 extends Day {
   private static Map<String, Boolean> buildWires(String lines) {
     return Arrays.stream(lines.split(System.lineSeparator()))
         .map(line -> line.split(":"))
-        .collect(Collectors.toMap(
-            value -> value[0],
-            value -> value[1].trim().equals("1")));
+        .collect(Collectors.toMap(value -> value[0], value -> value[1].trim().equals("1")));
   }
 
   private BigInteger getValueFromZWires(Map<String, Boolean> wires) {
     int zIndex = 0;
     StringBuilder zBinaryValue = new StringBuilder();
     while (true) {
-      String wireName = String.format("z%s", StringUtils.leftPad(String.valueOf(zIndex), 2, "0"));
+      String wireName = getZ(zIndex);
       if (wires.containsKey(wireName)) {
         zBinaryValue.append(BooleanUtils.isTrue(wires.get(wireName)) ? "1":"0");
       } else {
