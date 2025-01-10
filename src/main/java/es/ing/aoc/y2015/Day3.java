@@ -90,25 +90,12 @@ public class Day3 extends Day {
     }
 
     private Point getPointFrom(Point origin, Direction direction){
-
-        Point newPoint = null;
-
-        switch(direction){
-            case UP:
-                newPoint = new Point(origin.x - 1, origin.y);
-                break;
-            case DOWN:
-                newPoint = new Point(origin.x + 1, origin.y);
-                break;
-            case LEFT:
-                newPoint = new Point(origin.x, origin.y - 1);
-                break;
-            case RIGHT:
-                newPoint = new Point(origin.x, origin.y + 1);
-                break;
-        }
-
-        return newPoint;
+      return switch (direction) {
+        case UP -> new Point(origin.x - 1, origin.y);
+        case DOWN -> new Point(origin.x + 1, origin.y);
+        case LEFT -> new Point(origin.x, origin.y - 1);
+        case RIGHT -> new Point(origin.x, origin.y + 1);
+      };
     }
 
     public static void main(String[] args) {
